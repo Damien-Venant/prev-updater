@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 
@@ -10,6 +11,8 @@ import (
 type AzureDevOpsRepository struct {
 	client *httpclient.HttpClient
 }
+
+type jsonMap map[string]interface{}
 
 func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) error {
 	url := fmt.Sprintf("/pipelines/%d/runs", pipelineId)
@@ -24,6 +27,7 @@ func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) error {
 }
 
 func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) error {
+	var result jsonMap
 	url := fmt.Sprintf("/pipelines/%d/runs/%d", pipelineId, runId)
 	httpRequest, err := r.client.Get(url, nil)
 	if err != nil {
@@ -31,8 +35,10 @@ func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) error {
 	}
 
 	body, _ := io.ReadAll(httpRequest.Body)
-	fmt.Println(body)
-
+	if err := json.Unmarshal(body, &result); err != nil {
+		return err
+	}
+	fmt.Println(result)
 	return nil
 }
 
