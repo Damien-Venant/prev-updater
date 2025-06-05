@@ -1,27 +1,74 @@
 package repository
 
-import httpclient "github.com/prev-updater/pkg/http-client"
+import (
+	"fmt"
+	"go/build"
+	"io"
+
+	"github.com/prev-updater/pkg/http-client"
+)
 
 type AzureDevOpsRepository struct {
-	httpclient *httpclient.HttpClient
+	client *httpclient.HttpClient
 }
 
-func (r *AzureDevOpsRepository) GetPipelineRuns() error {
+func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) error {
+	url := fmt.Sprintf("/pipelines/%d/runs", pipelineId)
+	httpRequest, err := r.client.Get(url, nil)
+	if err != nil {
+		return err
+	}
+
+	body, _ := io.ReadAll(httpRequest.Body)
+	fmt.Println(body)
 	return nil
 }
 
-func (r *AzureDevOpsRepository) GetPipelineRun() error {
+func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) error {
+	url := fmt.Sprintf("/pipelines/%d/runs/%d", pipelineId, runId)
+	httpRequest, err := r.client.Get(url, nil)
+	if err != nil {
+		return err
+	}
+
+	body, _ := io.ReadAll(httpRequest.Body)
+	fmt.Println(body)
+
 	return nil
 }
 
-func (r *AzureDevOpsRepository) GetBuildWorkItem() error {
+func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) error {
+	url := fmt.Sprintf("/build/builds/%d/workitems", buildId)
+	httpRequest, err := r.client.Get(url, nil)
+	if err != nil {
+		return err
+	}
+
+	body, _ := io.ReadAll(httpRequest.Body)
+	fmt.Println(body)
 	return nil
 }
 
-func (r *AzureDevOpsRepository) GetWorkitem() error {
+func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) error {
+	url := fmt.Sprintf("/wit/workitems/%d", workItemId)
+	httpRequest, err := r.client.Get(url, nil)
+	if err != nil {
+		return err
+	}
+
+	body, _ := io.ReadAll(httpRequest.Body)
+	fmt.Println(body)
 	return nil
 }
 
-func (r *AzureDevOpsRepository) UpdateWorkitemField() error {
+func (r *AzureDevOpsRepository) UpdateWorkitemField(version string) error {
+	url := fmt.Sprintf("/build/builds/%d/workitems")
+	httpRequest, err := r.client.Get(url, nil)
+	if err != nil {
+		return err
+	}
+
+	body, _ := io.ReadAll(httpRequest.Body)
+	fmt.Println(body)
 	return nil
 }
