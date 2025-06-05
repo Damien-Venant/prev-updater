@@ -2,25 +2,25 @@ package model
 
 type (
 	PipelineRuns struct {
-		Id     int    `json:"id"`
-		Name   string `json:"name"`
-		State  string `json:"state"`
-		Result string `json:"result"`
+		Id     int
+		Name   string
+		State  string
+		Result string
 	}
 
 	BuildChanges struct {
-		Id      string `json:"id"`
-		Message string `json:"message"`
+		Id      string
+		Message string
 	}
 
 	BuildWorkItems struct {
-		Id  int    `json:"id"`
-		Url string `json:"url"`
+		Id  int
+		Url string
 	}
 
 	OperationFields struct {
-		Op    string `json:"op"`
-		Path  string `json:"path"`
-		Value string `json:"value"`
+		Op    string
+		Path  string
+		Value string
 	}
 )

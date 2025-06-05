@@ -2,7 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"go/build"
 	"io"
 
 	"github.com/prev-updater/pkg/http-client"
@@ -62,7 +61,7 @@ func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) error {
 }
 
 func (r *AzureDevOpsRepository) UpdateWorkitemField(version string) error {
-	url := fmt.Sprintf("/build/builds/%d/workitems")
+	url := fmt.Sprintf("/build/builds/workitems")
 	httpRequest, err := r.client.Get(url, nil)
 	if err != nil {
 		return err
