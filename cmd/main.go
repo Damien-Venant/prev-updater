@@ -2,29 +2,50 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 
-	"github.com/prev-updater/internal/infra"
+	"github.com/spf13/cobra"
 )
 
 var (
-	TOKEN string = ""
+	token        string = ""
+	baseUrl      string = ""
+	organisation string = ""
+	version_tool string = "debug_X.X.X"
 )
 
-func init() {
-	config := infra.LoadConfig()
-	fmt.Println(config)
+var rootCommand = &cobra.Command{
+	Short: "Update previsional version",
+	Long:  "Update previsional version of an user storie on ADO",
+	Run:   funcRun,
+}
 
-	if file, err := os.OpenFile("./api-key", os.O_RDONLY, os.ModeAppend); err != nil {
-		panic(err)
-	} else {
-		defer file.Close()
-		result, _ := io.ReadAll(file)
-		TOKEN = string(result)
-	}
+var versionCommand = &cobra.Command{
+	Use:  "version",
+	Long: "Get the version",
+	Run:  funcVersion,
+}
+
+func init() {
+	rootCommand.Flags().StringVarP(&token, "token", "t", "", "set ADO token (required)")
+	rootCommand.Flags().StringVarP(&baseUrl, "base-url", "b", "https://dev.azure.com/", "set base url")
+	rootCommand.Flags().StringVarP(&organisation, "organisation", "o", "", "set organisation (required)")
+	rootCommand.MarkFlagRequired("token")
+	rootCommand.MarkFlagRequired("organisation")
+	rootCommand.AddCommand(versionCommand)
 }
 
 func main() {
-	fmt.Print(TOKEN)
+	if err := rootCommand.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+}
+
+func funcVersion(cmd *cobra.Command, args []string) {
+	fmt.Println(version_tool)
+}
+
+func funcRun(cmd *cobra.Command, args []string) {
+
 }
