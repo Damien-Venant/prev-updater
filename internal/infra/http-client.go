@@ -2,8 +2,9 @@ package infra
 
 import (
 	"fmt"
+	"net/http"
 
-	"github.com/prev-updater/pkg/http-client"
+	httpclient "github.com/prev-updater/pkg/http-client"
 )
 
 type (
@@ -19,10 +20,9 @@ var (
 
 func ConfigureHttpClient(config *HttpClientConfiguration) {
 	bearerToken := fmt.Sprintf("Bearer %s", config.Token)
-	httpClient = &httpclient.HttpClient{
-		BaseUrl: config.BaseUrl,
-	}
-	httpClient.Headers.Add("Authorization", bearerToken)
+	headers := http.Header{}
+	headers.Add("Authorization", bearerToken)
+	httpClient = httpclient.New(config.BaseUrl, headers)
 }
 
 func GetHttpClient() *httpclient.HttpClient {
