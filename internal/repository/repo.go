@@ -9,38 +9,40 @@ import (
 )
 
 type AzureDevOpsRepository struct {
-	client *httpclient.HttpClient
+	client  *httpclient.HttpClient
+	version string
 }
 
 type jsonMap map[string]interface{}
 
 func New(client *httpclient.HttpClient) *AzureDevOpsRepository {
 	return &AzureDevOpsRepository{
-		client: client,
+		client:  client,
+		version: "7.1",
 	}
 }
 
 func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) error {
-	url := fmt.Sprintf("/pipelines/%d/runs", pipelineId)
-	httpRequest, err := r.client.Get(url, nil)
+	url := r.configureRootWithVersion("/pipelines/%d/runs", pipelineId)
+	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return err
 	}
 
-	body, _ := io.ReadAll(httpRequest.Body)
-	fmt.Println(body)
+	body, _ := io.ReadAll(httpResponse.Body)
+	fmt.Println(string(body))
 	return nil
 }
 
 func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) error {
 	var result jsonMap
-	url := fmt.Sprintf("/pipelines/%d/runs/%d", pipelineId, runId)
-	httpRequest, err := r.client.Get(url, nil)
+	url := r.configureRootWithVersion("/pipelines/%d/runs/%d", pipelineId, runId)
+	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return err
 	}
 
-	body, _ := io.ReadAll(httpRequest.Body)
+	body, _ := io.ReadAll(httpResponse.Body)
 	if err := json.Unmarshal(body, &result); err != nil {
 		return err
 	}
@@ -49,37 +51,43 @@ func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) error {
 }
 
 func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) error {
-	url := fmt.Sprintf("/build/builds/%d/workitems", buildId)
-	httpRequest, err := r.client.Get(url, nil)
+	url := r.configureRootWithVersion("/build/builds/%d/workitems", buildId)
+	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return err
 	}
 
-	body, _ := io.ReadAll(httpRequest.Body)
+	body, _ := io.ReadAll(httpResponse.Body)
 	fmt.Println(body)
 	return nil
 }
 
 func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) error {
-	url := fmt.Sprintf("/wit/workitems/%d", workItemId)
-	httpRequest, err := r.client.Get(url, nil)
+	url := r.configureRootWithVersion("/wit/workitems/%d", workItemId)
+	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return err
 	}
 
-	body, _ := io.ReadAll(httpRequest.Body)
+	body, _ := io.ReadAll(httpResponse.Body)
 	fmt.Println(body)
 	return nil
 }
 
-func (r *AzureDevOpsRepository) UpdateWorkitemField(version string) error {
-	url := fmt.Sprintf("/build/builds/workitems")
-	httpRequest, err := r.client.Get(url, nil)
+func (r *AzureDevOpsRepository) UpdateWorkitemField(workItemId int, version string) error {
+	url := r.configureRootWithVersion("/build/builds/workitems/%d", workItemId)
+	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return err
 	}
 
-	body, _ := io.ReadAll(httpRequest.Body)
+	body, _ := io.ReadAll(httpResponse.Body)
 	fmt.Println(body)
 	return nil
+}
+
+func (r *AzureDevOpsRepository) configureRootWithVersion(route string, values ...any) string {
+	url := fmt.Sprintf(route, values...)
+	url = fmt.Sprintf("%s?api-version=%s", url, r.version)
+	return url
 }
