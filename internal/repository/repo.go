@@ -23,7 +23,7 @@ func New(client *httpclient.HttpClient) *AzureDevOpsRepository {
 }
 
 func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) error {
-	url := r.configureRootWithVersion("/pipelines/%d/runs", pipelineId)
+	url := r.configureRouteWithVersion("pipelines/%d/runs", pipelineId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) error {
 
 func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) error {
 	var result jsonMap
-	url := r.configureRootWithVersion("/pipelines/%d/runs/%d", pipelineId, runId)
+	url := r.configureRouteWithVersion("pipelines/%d/runs/%d", pipelineId, runId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) error {
 }
 
 func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) error {
-	url := r.configureRootWithVersion("/build/builds/%d/workitems", buildId)
+	url := r.configureRouteWithVersion("build/builds/%d/workitems", buildId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) error {
 }
 
 func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) error {
-	url := r.configureRootWithVersion("/wit/workitems/%d", workItemId)
+	url := r.configureRouteWithVersion("wit/workitems/%d", workItemId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return err
@@ -75,7 +75,7 @@ func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) error {
 }
 
 func (r *AzureDevOpsRepository) UpdateWorkitemField(workItemId int, version string) error {
-	url := r.configureRootWithVersion("/build/builds/workitems/%d", workItemId)
+	url := r.configureRouteWithVersion("build/builds/workitems/%d", workItemId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return err
@@ -86,8 +86,8 @@ func (r *AzureDevOpsRepository) UpdateWorkitemField(workItemId int, version stri
 	return nil
 }
 
-func (r *AzureDevOpsRepository) configureRootWithVersion(route string, values ...any) string {
+func (r *AzureDevOpsRepository) configureRouteWithVersion(route string, values ...any) string {
 	url := fmt.Sprintf(route, values...)
-	url = fmt.Sprintf("%s?api-version=%s", url, r.version)
+	url = fmt.Sprintf("_apis/%s?api-version=%s", url, r.version)
 	return url
 }

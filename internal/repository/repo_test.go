@@ -34,7 +34,7 @@ func TestConfigureRouteWithVersion(t *testing.T) {
 	for _, test := range tests {
 		testName := fmt.Sprintf("%s_%s", "TestConfigureRouteWithVersion", test.name)
 		t.Run(testName, func(t *testing.T) {
-			result := test.version.configureRootWithVersion(test.route, test.parameters...)
+			result := test.version.configureRouteWithVersion(test.route, test.parameters...)
 			if result != test.wants {
 				assert.NotEqual(t, test.wants, result)
 			}
