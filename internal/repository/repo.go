@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/prev-updater/pkg/http-client"
+	httpclient "github.com/prev-updater/pkg/http-client"
 )
 
 type AzureDevOpsRepository struct {
@@ -13,6 +13,12 @@ type AzureDevOpsRepository struct {
 }
 
 type jsonMap map[string]interface{}
+
+func New(client *httpclient.HttpClient) *AzureDevOpsRepository {
+	return &AzureDevOpsRepository{
+		client: client,
+	}
+}
 
 func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) error {
 	url := fmt.Sprintf("/pipelines/%d/runs", pipelineId)
