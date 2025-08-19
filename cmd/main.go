@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/prev-updater/internal/infra"
 	"github.com/prev-updater/internal/repository"
@@ -29,6 +30,9 @@ var versionCommand = &cobra.Command{
 }
 
 func init() {
+	token = os.Getenv("PREV_UPDATER_TOKEN")
+	baseUrl = os.Getenv("PREV_UPDATER_BASEURL")
+
 	rootCommand.Flags().StringVarP(&token, "token", "t", "", "set ADO token (required)")
 	rootCommand.Flags().StringVarP(&baseUrl, "base-url", "b", "https://dev.azure.com/", "set base url")
 	rootCommand.Flags().StringVarP(&organisation, "organisation", "o", "", "set organisation (required)")
@@ -42,8 +46,8 @@ func init() {
 func main() {
 
 	infra.ConfigureHttpClient(&infra.HttpClientConfiguration{
-		BaseUrl: "",
-		Token:   "",
+		BaseUrl: baseUrl,
+		Token:   token,
 	})
 
 	client := infra.GetHttpClient()
