@@ -5,7 +5,12 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/prev-updater/internal/model"
 	httpclient "github.com/prev-updater/pkg/http-client"
+)
+
+const (
+	apiVersion string = "7.1"
 )
 
 type AzureDevOpsRepository struct {
@@ -13,65 +18,68 @@ type AzureDevOpsRepository struct {
 	version string
 }
 
-type jsonMap map[string]interface{}
-
 func New(client *httpclient.HttpClient) *AzureDevOpsRepository {
 	return &AzureDevOpsRepository{
 		client:  client,
-		version: "7.1",
+		version: apiVersion,
 	}
 }
 
-func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) error {
+func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) (error, []model.PipelineRuns) {
+	var paginationValue model.PaginatedValue[model.PipelineRuns]
 	url := r.configureRouteWithVersion("pipelines/%d/runs", pipelineId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
-		return err
+		return err, []model.PipelineRuns{}
 	}
 
-	body, _ := io.ReadAll(httpResponse.Body)
-	fmt.Println(string(body))
-	return nil
+	if err := readAndUnmarshal[model.PaginatedValue[model.PipelineRuns]](httpResponse.Body, &paginationValue); err != nil {
+		return err, []model.PipelineRuns{}
+	}
+
+	return nil, paginationValue.Value
 }
 
-func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) error {
-	var result jsonMap
+func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) (error, *model.PipelineRuns) {
+	var result model.PipelineRuns
 	url := r.configureRouteWithVersion("pipelines/%d/runs/%d", pipelineId, runId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
-		return err
+		return err, nil
 	}
 
-	body, _ := io.ReadAll(httpResponse.Body)
-	if err := json.Unmarshal(body, &result); err != nil {
-		return err
+	if err := readAndUnmarshal[model.PipelineRuns](httpResponse.Body, &result); err != nil {
+		return err, nil
 	}
-	fmt.Println(result)
-	return nil
+	return nil, &result
 }
 
-func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) error {
+func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) (error, *model.BuildWorkItems) {
+	var workItem model.BuildWorkItems
 	url := r.configureRouteWithVersion("build/builds/%d/workitems", buildId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
-		return err
+		return err, nil
 	}
 
-	body, _ := io.ReadAll(httpResponse.Body)
-	fmt.Println(body)
-	return nil
+	if err := readAndUnmarshal[model.BuildWorkItems](httpResponse.Body, &workItem); err != nil {
+		return err, nil
+	}
+	return nil, &workItem
 }
 
-func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) error {
+func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) (error, *model.BuildWorkItems) {
+	var buildWorkItems model.BuildWorkItems
 	url := r.configureRouteWithVersion("wit/workitems/%d", workItemId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
-		return err
+		return err, nil
 	}
 
-	body, _ := io.ReadAll(httpResponse.Body)
-	fmt.Println(body)
-	return nil
+	if err := readAndUnmarshal[model.BuildWorkItems](httpResponse.Body, &buildWorkItems); err != nil {
+		return err, nil
+	}
+	return nil, &buildWorkItems
 }
 
 func (r *AzureDevOpsRepository) UpdateWorkitemField(workItemId int, version string) error {
@@ -81,8 +89,7 @@ func (r *AzureDevOpsRepository) UpdateWorkitemField(workItemId int, version stri
 		return err
 	}
 
-	body, _ := io.ReadAll(httpResponse.Body)
-	fmt.Println(body)
+	_, _ = io.ReadAll(httpResponse.Body)
 	return nil
 }
 
@@ -90,4 +97,15 @@ func (r *AzureDevOpsRepository) configureRouteWithVersion(route string, values .
 	url := fmt.Sprintf(route, values...)
 	url = fmt.Sprintf("_apis/%s?api-version=%s", url, r.version)
 	return url
+}
+
+func readAndUnmarshal[T any](body io.Reader, model *T) error {
+	buffBody, err := io.ReadAll(body)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(buffBody, model); err != nil {
+		return err
+	}
+	return nil
 }

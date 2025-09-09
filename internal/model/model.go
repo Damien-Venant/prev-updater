@@ -1,26 +1,31 @@
 package model
 
 type (
+	PaginatedValue[T any] struct {
+		Count int `json:"count"`
+		Value []T `json:"value"`
+	}
+
 	PipelineRuns struct {
-		Id     int
-		Name   string
-		State  string
-		Result string
+		Id     int    `json:"id"`
+		Name   string `json:"name"`
+		State  string `json:"state"`
+		Result string `json:"result"`
 	}
 
 	BuildChanges struct {
-		Id      string
-		Message string
+		Id      string `json:"id"`
+		Message string `json:"message"`
 	}
 
 	BuildWorkItems struct {
-		Id  int
-		Url string
+		Id  int    `json:"id"`
+		Url string `json:"url"`
 	}
 
 	OperationFields struct {
-		Op    string
-		Path  string
-		Value string
+		Op    string `json:"op"`
+		Path  string `json:"path"`
+		Value string `json:"value"`
 	}
 )
