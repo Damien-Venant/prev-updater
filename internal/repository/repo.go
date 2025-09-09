@@ -2,6 +2,7 @@ package repository
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 
@@ -11,6 +12,11 @@ import (
 
 const (
 	apiVersion string = "7.1"
+)
+
+var (
+	NotFoundError       error = errors.New("")
+	InternalServerError error = errors.New("")
 )
 
 type AzureDevOpsRepository struct {
@@ -99,6 +105,7 @@ func (r *AzureDevOpsRepository) configureRouteWithVersion(route string, values .
 	return url
 }
 
+// TODO: write a test for this function
 func readAndUnmarshal[T any](body io.Reader, model *T) error {
 	buffBody, err := io.ReadAll(body)
 	if err != nil {
@@ -107,5 +114,9 @@ func readAndUnmarshal[T any](body io.Reader, model *T) error {
 	if err := json.Unmarshal(buffBody, model); err != nil {
 		return err
 	}
+	return nil
+}
+
+func errorCodeMapping(errorCode int) error {
 	return nil
 }

@@ -1,7 +1,6 @@
 package httpclient
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -35,7 +34,6 @@ func (h *HttpClient) Get(path string, headers http.Header) (*http.Response, erro
 	request.Header = h.Headers
 	setHeader(request, headers)
 
-	fmt.Println(url)
 	return h.client.Do(request)
 }
 
@@ -47,14 +45,14 @@ func (h *HttpClient) Patch(path string, model any, headers http.Header) (*http.R
 	}
 	request.Header = h.Headers
 	setHeader(request, headers)
-	result, err := json.Marshal(model)
 	if err != nil {
 		return nil, err
 	}
-	request.Body.Read(result)
+
 	return h.client.Do(request)
 }
 
+// TODO : write a test for this function
 func setHeader(request *http.Request, headers http.Header) {
 	for key, values := range headers {
 		for _, val := range values {
