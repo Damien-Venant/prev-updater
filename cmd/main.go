@@ -13,6 +13,7 @@ var (
 	token        string = ""
 	baseUrl      string = ""
 	organisation string = ""
+	project      string = ""
 	version_tool string = "debug_X.X.X"
 	pipelineId   int32
 )
@@ -36,28 +37,31 @@ func init() {
 	rootCommand.Flags().StringVarP(&token, "token", "t", "", "set ADO token (required)")
 	rootCommand.Flags().StringVarP(&baseUrl, "base-url", "b", "https://dev.azure.com/", "set base url")
 	rootCommand.Flags().StringVarP(&organisation, "organisation", "o", "", "set organisation (required)")
-	rootCommand.Flags().Int32VarP(&pipelineId, "pipeline-id", "p", 0, "set pipeline id")
+	rootCommand.Flags().Int32VarP(&pipelineId, "pipeline-id", "i", 0, "set pipeline id")
+	rootCommand.Flags().StringVarP(&project, "project", "p", "", "project name")
 	rootCommand.MarkFlagRequired("token")
 	rootCommand.MarkFlagRequired("organisation")
+	rootCommand.MarkFlagRequired("project")
 	rootCommand.MarkFlagRequired("pipeline-id")
 	rootCommand.AddCommand(versionCommand)
 }
 
 func main() {
 
+	if err := rootCommand.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+	url := fmt.Sprintf("%s/%s/%s/", baseUrl, organisation, project)
 	infra.ConfigureHttpClient(&infra.HttpClientConfiguration{
-		BaseUrl: baseUrl,
+		BaseUrl: url,
 		Token:   token,
 	})
-
 	client := infra.GetHttpClient()
 
+	fmt.Println(url)
 	repo := repository.New(client)
 	repo.GetPipelineRuns(862)
-	//if err := rootCommand.Execute(); err != nil {
-	//	fmt.Println(err)
-	//	os.Exit(-1)
-	//}
 }
 
 func funcVersion(cmd *cobra.Command, args []string) {
