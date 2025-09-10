@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/prev-updater/internal/model"
 	httpclient "github.com/prev-updater/pkg/http-client"
@@ -15,9 +16,17 @@ const (
 )
 
 var (
-	NotFoundError       error = errors.New("")
-	InternalServerError error = errors.New("")
+	NotFoundError       error = errors.New("Ressource not found")
+	InternalServerError error = errors.New("Internal server error")
+	BadRequestError     error = errors.New("Bad request error")
+	IdkError            error = errors.New("IDK what's happened")
 )
+
+var mappingError map[int]error = map[int]error{
+	http.StatusBadRequest:          BadRequestError,
+	http.StatusInternalServerError: InternalServerError,
+	http.StatusNotFound:            NotFoundError,
+}
 
 type AzureDevOpsRepository struct {
 	client  *httpclient.HttpClient
@@ -35,7 +44,12 @@ func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) (error, []model.
 	var paginationValue model.PaginatedValue[model.PipelineRuns]
 	url := r.configureRouteWithVersion("pipelines/%d/runs", pipelineId)
 	httpResponse, err := r.client.Get(url, nil)
+
 	if err != nil {
+		return err, []model.PipelineRuns{}
+	}
+
+	if err := treatResult(httpResponse, http.StatusOK); err != nil {
 		return err, []model.PipelineRuns{}
 	}
 
@@ -54,6 +68,10 @@ func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) (error, *m
 		return err, nil
 	}
 
+	if err := treatResult(httpResponse, http.StatusOK); err != nil {
+		return err, nil
+	}
+
 	if err := readAndUnmarshal[model.PipelineRuns](httpResponse.Body, &result); err != nil {
 		return err, nil
 	}
@@ -65,6 +83,10 @@ func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) (error, *model.Bui
 	url := r.configureRouteWithVersion("build/builds/%d/workitems", buildId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
+		return err, nil
+	}
+
+	if err := treatResult(httpResponse, http.StatusOK); err != nil {
 		return err, nil
 	}
 
@@ -82,6 +104,10 @@ func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) (error, *model.Build
 		return err, nil
 	}
 
+	if err := treatResult(httpResponse, http.StatusOK); err != nil {
+		return err, nil
+	}
+
 	if err := readAndUnmarshal[model.BuildWorkItems](httpResponse.Body, &buildWorkItems); err != nil {
 		return err, nil
 	}
@@ -92,6 +118,10 @@ func (r *AzureDevOpsRepository) UpdateWorkitemField(workItemId int, version stri
 	url := r.configureRouteWithVersion("build/builds/workitems/%d", workItemId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
+		return err
+	}
+
+	if err := treatResult(httpResponse, http.StatusOK); err != nil {
 		return err
 	}
 
@@ -117,6 +147,19 @@ func readAndUnmarshal[T any](body io.Reader, model *T) error {
 	return nil
 }
 
+// TODO: write a test for this function
 func errorCodeMapping(errorCode int) error {
+	if err, ok := mappingError[errorCode]; !ok {
+		return IdkError
+	} else {
+		return err
+	}
+}
+
+// TODO: write a test for this function
+func treatResult(response *http.Response, expectedReturnCode int) error {
+	if returnCode := response.StatusCode; expectedReturnCode != returnCode {
+		return errorCodeMapping(returnCode)
+	}
 	return nil
 }
