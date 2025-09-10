@@ -1,7 +1,10 @@
 package repository
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -40,4 +43,70 @@ func TestConfigureRouteWithVersion(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestErrorCodeMapping(t *testing.T) {
+	tests := []struct {
+		Name           string
+		ErrorCode      int
+		ExpectedResult error
+	}{
+		{
+			Name:           "InternalServerError",
+			ErrorCode:      http.StatusInternalServerError,
+			ExpectedResult: InternalServerError,
+		},
+		{
+			Name:           "BadRequestError",
+			ErrorCode:      http.StatusBadRequest,
+			ExpectedResult: BadRequestError,
+		},
+		{
+			Name:           "NotFoundError",
+			ErrorCode:      http.StatusNotFound,
+			ExpectedResult: NotFoundError,
+		},
+	}
+
+	for _, test := range tests {
+		testName := fmt.Sprintf("TestErrorCodeMapping%s", test.Name)
+		t.Run(testName, func(t *testing.T) {
+			err := errorCodeMapping(test.ErrorCode)
+			assert.ErrorIs(t, err, test.ExpectedResult)
+		})
+	}
+}
+
+func TestErrorCodeMappingErrorUnknow(t *testing.T) {
+	test := struct {
+		ErrorCode      int
+		ExpectedResult error
+	}{
+		ErrorCode:      http.StatusBadGateway,
+		ExpectedResult: IdkError,
+	}
+
+	err := errorCodeMapping(test.ErrorCode)
+	assert.ErrorIs(t, err, test.ExpectedResult)
+}
+
+func TestReadAndUnMarshall(t *testing.T) {
+	type Person struct {
+		FirstName string `json:"first-name"`
+		LastName  string `json:"last-name"`
+	}
+	var person Person
+
+	resultModel, _ := json.Marshal(Person{
+		FirstName: "damien",
+		LastName:  "venant",
+	})
+
+	reader := bytes.NewReader(resultModel)
+
+	err := readAndUnmarshal[Person](reader, &person)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "damien", person.FirstName)
+	assert.Equal(t, "venant", person.LastName)
 }

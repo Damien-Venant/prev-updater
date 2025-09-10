@@ -147,7 +147,6 @@ func readAndUnmarshal[T any](body io.Reader, model *T) error {
 	return nil
 }
 
-// TODO: write a test for this function
 func errorCodeMapping(errorCode int) error {
 	if err, ok := mappingError[errorCode]; !ok {
 		return IdkError
