@@ -30,8 +30,8 @@ jobs:
       run: go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o ./bin/prev-updater-${{ matrix.os }} ./cmd/main.go 
 
     - name: Build (windows)
-      if: matrix.os == 'ubuntu'
-      run: go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o .\bin\prev-updater-${{ matrix.os }}.exe .\cmd\main.go
+      if: matrix.os == 'windows'
+      run: go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o ./bin/prev-updater-${{ matrix.os }}.exe .\cmd\main.go
 
     - name: Publish artifact
       uses: actions/upload-artifact@v4.6.2
