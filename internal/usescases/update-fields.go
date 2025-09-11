@@ -57,6 +57,7 @@ func (u *AdoUsesCases) UpdateFieldsByPipelineId(pipelineId int) error {
 	return nil
 }
 
+// Test
 func (u *AdoUsesCases) updateFields(woritemId, name string) error {
 	repo := u.Repository
 	modelToUpdload := model.OperationFields{
