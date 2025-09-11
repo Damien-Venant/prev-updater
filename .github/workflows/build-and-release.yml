@@ -25,13 +25,13 @@ jobs:
     - name: Test
       run: go test -v ./...
       
-    - name: Build
+    - name: Build (linux)
+      if: matrix.os == "ubuntu"
       run: go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o ./bin/prev-updater-${{ matrix.os }} ./cmd/main.go 
-      if: ${{ matrix.os }} != "windows"
 
-    - name: Build
+    - name: Build (windows)
+      if: matrix.os == "ubuntu"
       run: go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o .\bin\prev-updater-${{ matrix.os }}.exe .\cmd\main.go
-      if: ${{ matrix.os }} == "windows"
 
     - name: Publish artifact
       uses: actions/upload-artifact@v4.6.2
