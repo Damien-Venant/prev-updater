@@ -45,7 +45,7 @@ func init() {
 
 	launchCommand.Flags().StringVarP(&token, "token", "t", "", "set ADO token (required)")
 	launchCommand.Flags().StringVarP(&baseUrl, "base-url", "b", "https://dev.azure.com/", "set base url")
-	launchCommand.Flags().StringVarP(&organisation, "organisation", "o", "", "set organisation (required)")
+	launchCommand.Flags().StringVarP(&organisation, "organisation", "o", "", "set organisation")
 	launchCommand.Flags().Int32VarP(&pipelineId, "pipeline-id", "i", 0, "set pipeline id")
 	launchCommand.Flags().StringVarP(&project, "project", "p", "", "project name")
 
@@ -81,14 +81,12 @@ func funcStart(cmd *cobra.Command, args []string) {
 		BaseUrl: url,
 		Token:   token,
 	})
-	pipelineId := 862
 	client := infra.GetHttpClient()
 	repo := repository.New(client)
 
 	use := usescases.NewAdoUsesCases(repo)
 
-	if err := use.UpdateFieldsByLastRuns(pipelineId); err != nil {
+	if err := use.UpdateFieldsByLastRuns(int(pipelineId)); err != nil {
 		panic(err)
 	}
-	fmt.Println("Finish")
 }
