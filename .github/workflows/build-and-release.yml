@@ -36,7 +36,7 @@ jobs:
     - name: Publish artifact
       uses: actions/upload-artifact@v4.6.2
       with:
-        name: prev-updater-${{ matrix.os }}${{ matrix.os == 'windows' && '.exe' || '' }}
+        name: prev-updater-${{ matrix.os }}
         path: ./bin
 
   release:
