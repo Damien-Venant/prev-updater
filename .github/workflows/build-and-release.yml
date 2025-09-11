@@ -68,6 +68,7 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./bin/prev-updater-windows.exe
           asset_name: prev-updater-windows-${{ env.VERSION }}.exe
+          asset_content_type: application/octet-stream
           
       - uses: actions/upload-release-asset@v1.0.1
         name: Upload linux binaire
@@ -77,6 +78,7 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./bin/prev-updater-ubuntu
           asset_name: prev-updater-linux-${{ env.VERSION }}
+          asset_content_type: application/octet-stream
 
       - uses: eregon/publish-release@v1
         env:
