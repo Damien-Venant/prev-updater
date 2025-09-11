@@ -41,7 +41,8 @@ func New(client *httpclient.HttpClient) *AzureDevOpsRepository {
 }
 
 func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) ([]model.PipelineRuns, error) {
-	var paginationValue model.PaginatedValue[model.PipelineRuns]
+	type PipelineRuns model.PaginatedValue[model.PipelineRuns]
+	var paginationValue PipelineRuns
 	url := r.configureRouteWithVersion("pipelines/%d/runs", pipelineId)
 	httpResponse, err := r.client.Get(url, nil)
 
@@ -53,7 +54,7 @@ func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) ([]model.Pipelin
 		return []model.PipelineRuns{}, err
 	}
 
-	if err := readAndUnmarshal[model.PaginatedValue[model.PipelineRuns]](httpResponse.Body, &paginationValue); err != nil {
+	if err := readAndUnmarshal[PipelineRuns](httpResponse.Body, &paginationValue); err != nil {
 		return []model.PipelineRuns{}, err
 	}
 
@@ -78,27 +79,28 @@ func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) (*model.Pi
 	return &result, nil
 }
 
-func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) (*model.BuildWorkItems, error) {
-	var workItem model.BuildWorkItems
+func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) ([]model.BuildWorkItems, error) {
+	type BuildWorkItems model.PaginatedValue[model.BuildWorkItems]
+	var workItem BuildWorkItems
 	url := r.configureRouteWithVersion("build/builds/%d/workitems", buildId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
-		return nil, err
+		return []model.BuildWorkItems{}, err
 	}
 
 	if err := treatResult(httpResponse, http.StatusOK); err != nil {
-		return nil, err
+		return []model.BuildWorkItems{}, err
 	}
 
-	if err := readAndUnmarshal[model.BuildWorkItems](httpResponse.Body, &workItem); err != nil {
-		return nil, err
+	if err := readAndUnmarshal[BuildWorkItems](httpResponse.Body, &workItem); err != nil {
+		return []model.BuildWorkItems{}, err
 	}
-	return &workItem, nil
+	return workItem.Value, nil
 }
 
 func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) (*model.BuildWorkItems, error) {
 	var buildWorkItems model.BuildWorkItems
-	url := r.configureRouteWithVersion("wit/workitems/%d", workItemId)
+	url := r.configureRouteWithVersion("wit/workItems/%d", workItemId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return nil, err
