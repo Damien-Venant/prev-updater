@@ -6,6 +6,7 @@ import (
 
 	"github.com/prev-updater/internal/infra"
 	"github.com/prev-updater/internal/repository"
+	"github.com/prev-updater/internal/usescases"
 	"github.com/spf13/cobra"
 )
 
@@ -80,13 +81,14 @@ func funcStart(cmd *cobra.Command, args []string) {
 		BaseUrl: url,
 		Token:   token,
 	})
+	pipelineId := 862
 	client := infra.GetHttpClient()
-
 	repo := repository.New(client)
-	lastRun, err := repo.GetPipelineRuns(862)
-	if err != nil {
+
+	use := usescases.NewAdoUsesCases(repo)
+
+	if err := use.UpdateFieldsByLastRuns(pipelineId); err != nil {
 		panic(err)
 	}
-
-	fmt.Println(lastRun[0].Name)
+	fmt.Println("Finish")
 }

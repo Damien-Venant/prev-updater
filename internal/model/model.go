@@ -19,7 +19,7 @@ type (
 	}
 
 	BuildWorkItems struct {
-		Id  int    `json:"id"`
+		Id  string `json:"id"`
 		Url string `json:"url"`
 	}
 

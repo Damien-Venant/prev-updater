@@ -45,7 +45,6 @@ func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) ([]model.Pipelin
 	var paginationValue PipelineRuns
 	url := r.configureRouteWithVersion("pipelines/%d/runs", pipelineId)
 	httpResponse, err := r.client.Get(url, nil)
-
 	if err != nil {
 		return []model.PipelineRuns{}, err
 	}
@@ -116,18 +115,20 @@ func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) (*model.BuildWorkIte
 	return &buildWorkItems, nil
 }
 
-func (r *AzureDevOpsRepository) UpdateWorkitemField(workItemId int, version string) error {
-	url := r.configureRouteWithVersion("build/builds/workitems/%d", workItemId)
-	httpResponse, err := r.client.Get(url, nil)
+func (r *AzureDevOpsRepository) UpdateWorkitemField(workItemId string, operation model.OperationFields) error {
+	url := r.configureRouteWithVersion("wit/workItems/%s", workItemId)
+	model, err := json.Marshal([]model.OperationFields{operation})
 	if err != nil {
 		return err
 	}
-
+	httpResponse, err := r.client.Patch(url, model, nil)
+	if err != nil {
+		return err
+	}
 	if err := treatResult(httpResponse, http.StatusOK); err != nil {
 		return err
 	}
 
-	_, _ = io.ReadAll(httpResponse.Body)
 	return nil
 }
 

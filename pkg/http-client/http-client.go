@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 )
@@ -37,13 +38,14 @@ func (h *HttpClient) Get(path string, headers http.Header) (*http.Response, erro
 	return h.client.Do(request)
 }
 
-func (h *HttpClient) Patch(path string, model any, headers http.Header) (*http.Response, error) {
+func (h *HttpClient) Patch(path string, body []byte, headers http.Header) (*http.Response, error) {
 	url := fmt.Sprintf("%s/%s", h.BaseUrl, path)
-	request, err := http.NewRequest("PATCH", url, nil)
+	request, err := http.NewRequest("PATCH", url, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
 	request.Header = h.Headers
+	request.Header.Set("Content-Type", "application/json-patch+json")
 	setHeader(request, headers)
 	if err != nil {
 		return nil, err
