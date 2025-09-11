@@ -36,13 +36,12 @@ jobs:
     - name: Publish artifact
       uses: actions/upload-artifact@v4.6.2
       with:
-        name: prev-updater-${{ matrix.os }}
+        name: prev-updater-${{ matrix.os }}${{ matrix.os == 'windows' && '.exe' || '' }}
         path: ./bin
 
   release:
     runs-on: ubuntu-latest
     needs: [build]
-    continue-on-error: false
     steps:
       - name: Download windows artifact
         uses: actions/download-artifact@v5.0.0
@@ -66,20 +65,20 @@ jobs:
       - uses: actions/upload-release-asset@v1.0.1
         name: Upload windows binaire
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./bin/prev-updater-windows.exe
+          asset_path: ./bin/prev-updater-windows/prev-updater-windows.exe
           asset_name: prev-updater-windows-${{ env.VERSION }}.exe
           asset_content_type: application/octet-stream
           
       - uses: actions/upload-release-asset@v1.0.1
         name: Upload linux binaire
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./bin/prev-updater-ubuntu
+          asset_path: ./bin/prev-updater-ubuntu/prev-updater-ubuntu
           asset_name: prev-updater-linux-${{ env.VERSION }}
           asset_content_type: application/octet-stream
 
