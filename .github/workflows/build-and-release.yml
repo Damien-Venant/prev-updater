@@ -26,11 +26,11 @@ jobs:
       run: go test -v ./...
       
     - name: Build
-      run: mkdir bin && go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o ./bin/prev-updater-${{ matrix.os }} ./... 
+      run: go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o ./bin/prev-updater-${{ matrix.os }} ./cmd/main.go 
       if: ${{ matrix.os }} != "windows"
 
     - name: Build
-      run: mkdir bin && go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o ./bin/prev-updater-${{ matrix.os }}.exe ./... 
+      run: go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o .\bin\prev-updater-${{ matrix.os }}.exe .\cmd\main.go
       if: ${{ matrix.os }} == "windows"
 
     - name: Publish artifact
