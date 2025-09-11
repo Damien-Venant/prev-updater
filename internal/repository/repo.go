@@ -40,78 +40,78 @@ func New(client *httpclient.HttpClient) *AzureDevOpsRepository {
 	}
 }
 
-func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) (error, []model.PipelineRuns) {
+func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) ([]model.PipelineRuns, error) {
 	var paginationValue model.PaginatedValue[model.PipelineRuns]
 	url := r.configureRouteWithVersion("pipelines/%d/runs", pipelineId)
 	httpResponse, err := r.client.Get(url, nil)
 
 	if err != nil {
-		return err, []model.PipelineRuns{}
+		return []model.PipelineRuns{}, err
 	}
 
 	if err := treatResult(httpResponse, http.StatusOK); err != nil {
-		return err, []model.PipelineRuns{}
+		return []model.PipelineRuns{}, err
 	}
 
 	if err := readAndUnmarshal[model.PaginatedValue[model.PipelineRuns]](httpResponse.Body, &paginationValue); err != nil {
-		return err, []model.PipelineRuns{}
+		return []model.PipelineRuns{}, err
 	}
 
-	return nil, paginationValue.Value
+	return paginationValue.Value, err
 }
 
-func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) (error, *model.PipelineRuns) {
+func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) (*model.PipelineRuns, error) {
 	var result model.PipelineRuns
 	url := r.configureRouteWithVersion("pipelines/%d/runs/%d", pipelineId, runId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	if err := treatResult(httpResponse, http.StatusOK); err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	if err := readAndUnmarshal[model.PipelineRuns](httpResponse.Body, &result); err != nil {
-		return err, nil
+		return nil, err
 	}
-	return nil, &result
+	return &result, nil
 }
 
-func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) (error, *model.BuildWorkItems) {
+func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) (*model.BuildWorkItems, error) {
 	var workItem model.BuildWorkItems
 	url := r.configureRouteWithVersion("build/builds/%d/workitems", buildId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	if err := treatResult(httpResponse, http.StatusOK); err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	if err := readAndUnmarshal[model.BuildWorkItems](httpResponse.Body, &workItem); err != nil {
-		return err, nil
+		return nil, err
 	}
-	return nil, &workItem
+	return &workItem, nil
 }
 
-func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) (error, *model.BuildWorkItems) {
+func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) (*model.BuildWorkItems, error) {
 	var buildWorkItems model.BuildWorkItems
 	url := r.configureRouteWithVersion("wit/workitems/%d", workItemId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	if err := treatResult(httpResponse, http.StatusOK); err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	if err := readAndUnmarshal[model.BuildWorkItems](httpResponse.Body, &buildWorkItems); err != nil {
-		return err, nil
+		return nil, err
 	}
-	return nil, &buildWorkItems
+	return &buildWorkItems, nil
 }
 
 func (r *AzureDevOpsRepository) UpdateWorkitemField(workItemId int, version string) error {
@@ -135,7 +135,6 @@ func (r *AzureDevOpsRepository) configureRouteWithVersion(route string, values .
 	return url
 }
 
-// TODO: write a test for this function
 func readAndUnmarshal[T any](body io.Reader, model *T) error {
 	buffBody, err := io.ReadAll(body)
 	if err != nil {
@@ -155,7 +154,6 @@ func errorCodeMapping(errorCode int) error {
 	}
 }
 
-// TODO: write a test for this function
 func treatResult(response *http.Response, expectedReturnCode int) error {
 	if returnCode := response.StatusCode; expectedReturnCode != returnCode {
 		return errorCodeMapping(returnCode)
