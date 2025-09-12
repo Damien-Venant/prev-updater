@@ -10,6 +10,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	EXIT_FAILURE int = -1
+	EXIT_SUCCESS     = 0
+)
+
 var (
 	token        string = ""
 	baseUrl      string = ""
@@ -36,7 +41,7 @@ var launchCommand = &cobra.Command{
 	Use:   "start",
 	Short: "Start the prev-updater",
 	Long:  "Start the prev-updater command to changes fields in ADO cards",
-	Run:   funcStart,
+	Run:   funcStartBatching,
 }
 
 func init() {
@@ -75,7 +80,7 @@ func funcRun(cmd *cobra.Command, args []string) {
 
 }
 
-func funcStart(cmd *cobra.Command, args []string) {
+func funcStartBatching(cmd *cobra.Command, args []string) {
 	url := fmt.Sprintf("%s/%s/%s/", baseUrl, organisation, project)
 	infra.ConfigureHttpClient(&infra.HttpClientConfiguration{
 		BaseUrl: url,
@@ -87,6 +92,8 @@ func funcStart(cmd *cobra.Command, args []string) {
 	use := usescases.NewAdoUsesCases(repo)
 
 	if err := use.UpdateFieldsByLastRuns(int(pipelineId)); err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(EXIT_FAILURE)
 	}
+	os.Exit(EXIT_SUCCESS)
 }

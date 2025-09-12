@@ -54,7 +54,6 @@ func (h *HttpClient) Patch(path string, body []byte, headers http.Header) (*http
 	return h.client.Do(request)
 }
 
-// TODO : write a test for this function
 func setHeader(request *http.Request, headers http.Header) {
 	for key, values := range headers {
 		for _, val := range values {
