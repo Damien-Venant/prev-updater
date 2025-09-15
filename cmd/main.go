@@ -97,7 +97,7 @@ func funcStartBatching(cmd *cobra.Command, args []string) {
 	infra.ConfigureHttpClient(&infra.HttpClientConfiguration{
 		BaseUrl: url,
 		Token:   token,
-	})
+	}, logger)
 	client := infra.GetHttpClient()
 	repo := repository.New(client)
 
