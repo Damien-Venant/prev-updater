@@ -55,3 +55,36 @@ prev-updater start -b "YOUR_BASE_URL" \
     -t "YOUR_ADO_TOKEN" \
     -p "YOUR_ADO_PROJECT"
 ````
+
+---
+
+## 📜 Logs
+Par défaut, les logs sont enregistrés dans :
+````bash
+$HOME/pre-updater/prev-updater.log
+````
+Ce fichier contient l’historique d’exécution et les éventuelles erreurs.
+Il peut être utile lors du débogage ou pour auditer l’utilisation de l’outil.
+
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Que ce soit pour corriger un bug, ajouter une fonctionnalité ou améliorer la documentation.
+
+### 🔧 Comment contribuer
+
+1. **Cloner** le projet
+2. **Installer** l'outil lefthook puis lancer la commande suivante :
+````bash
+lefthook install
+````
+3. Créer une issue & une nouvelle branche depuis la branche `dev`.
+4. Développer votre fonctionnalité/correctif.
+5. Commiter vos changements en respectant [convention de commit](https://www.conventionalcommits.org/en/v1.0.0/).
+6. Poussez votre branche.
+7. Créer un pull request.
+
+## 📌 Règles de contribution
+ * Respecter le style de code Go (formatage avec go fmt)
+ * Documenter les nouvelles fonctionnalités dans le README
+ * Ajouter des tests unitaires
