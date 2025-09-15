@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/prev-updater/internal/model"
-	httpclient "github.com/prev-updater/pkg/http-client"
+	"github.com/Damien-Venant/prev-updater/internal/model"
+	httpclient "github.com/Damien-Venant/prev-updater/pkg/http-client"
 )
 
 const (

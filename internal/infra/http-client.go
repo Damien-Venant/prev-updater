@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	httpclient "github.com/prev-updater/pkg/http-client"
+	httpclient "github.com/Damien-Venant/prev-updater/pkg/http-client"
+	"github.com/rs/zerolog"
 )
 
 type (
@@ -18,11 +19,11 @@ var (
 	httpClient *httpclient.HttpClient
 )
 
-func ConfigureHttpClient(config *HttpClientConfiguration) {
+func ConfigureHttpClient(config *HttpClientConfiguration, logger *zerolog.Logger) {
 	bearerToken := fmt.Sprintf("Bearer %s", config.Token)
 	headers := http.Header{}
 	headers.Add("Authorization", bearerToken)
-	httpClient = httpclient.New(config.BaseUrl, headers)
+	httpClient = httpclient.New(config.BaseUrl, headers, logger)
 }
 
 func GetHttpClient() *httpclient.HttpClient {
