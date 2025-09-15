@@ -1,9 +1,6 @@
 package usescases
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/Damien-Venant/prev-updater/internal/model"
 	"github.com/rs/zerolog"
 )
