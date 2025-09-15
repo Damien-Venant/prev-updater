@@ -3,11 +3,16 @@ package main
 import (
 	"fmt"
 	"os"
-
 	"github.com/Damien-Venant/prev-updater/internal/infra"
 	"github.com/Damien-Venant/prev-updater/internal/repository"
 	"github.com/Damien-Venant/prev-updater/internal/usescases"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
+)
+
+const (
+	EXIT_FAILURE = -1
+	EXIT_SUCCESS = 0
 )
 
 var (
@@ -17,6 +22,8 @@ var (
 	project      string = ""
 	versionTool  string = "debug_X.X.X"
 	pipelineId   int32
+
+	logger *zerolog.Logger = nil
 )
 
 var rootCommand = &cobra.Command{
@@ -36,13 +43,10 @@ var launchCommand = &cobra.Command{
 	Use:   "start",
 	Short: "Start the prev-updater",
 	Long:  "Start the prev-updater command to changes fields in ADO cards",
-	Run:   funcStart,
+	Run:   funcStartBatching,
 }
 
 func init() {
-	token = os.Getenv("PREV_UPDATER_TOKEN")
-	baseUrl = os.Getenv("PREV_UPDATER_BASEURL")
-
 	launchCommand.Flags().StringVarP(&token, "token", "t", "", "set ADO token (required)")
 	launchCommand.Flags().StringVarP(&baseUrl, "base-url", "b", "https://dev.azure.com/", "set base url")
 	launchCommand.Flags().StringVarP(&organisation, "organisation", "o", "", "set organisation")
@@ -56,15 +60,23 @@ func init() {
 
 	rootCommand.AddCommand(versionCommand)
 	rootCommand.AddCommand(launchCommand)
+
+	_, err := infra.ConfigDirectory()
+	if err != nil {
+		panic(err)
+	}
+	loggerWriter, err := infra.OpenLogFile()
+	if err != nil {
+		panic(err)
+	}
+	logger = infra.NewLogger(loggerWriter)
 }
 
 func main() {
-
 	if err := rootCommand.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
+		os.Exit(exitWithError())
 	}
-
+	os.Exit(EXIT_SUCCESS)
 }
 
 func funcVersion(cmd *cobra.Command, args []string) {
@@ -75,18 +87,27 @@ func funcRun(cmd *cobra.Command, args []string) {
 
 }
 
-func funcStart(cmd *cobra.Command, args []string) {
+func funcStartBatching(cmd *cobra.Command, args []string) {
 	url := fmt.Sprintf("%s/%s/%s/", baseUrl, organisation, project)
 	infra.ConfigureHttpClient(&infra.HttpClientConfiguration{
 		BaseUrl: url,
 		Token:   token,
-	})
+	}, logger)
 	client := infra.GetHttpClient()
 	repo := repository.New(client)
 
-	use := usescases.NewAdoUsesCases(repo)
+	use := usescases.NewAdoUsesCases(repo, logger)
 
 	if err := use.UpdateFieldsByLastRuns(int(pipelineId)); err != nil {
-		panic(err)
+		logger.
+			Err(err).
+			Send()
+		os.Exit(exitWithError())
 	}
+}
+
+func exitWithError() int {
+	infra.CloseLogFile()
+
+	return EXIT_FAILURE
 }
