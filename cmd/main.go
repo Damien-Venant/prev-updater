@@ -7,6 +7,7 @@ import (
 	"github.com/prev-updater/internal/infra"
 	"github.com/prev-updater/internal/repository"
 	"github.com/prev-updater/internal/usescases"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +23,8 @@ var (
 	project      string = ""
 	versionTool  string = "debug_X.X.X"
 	pipelineId   int32
+
+	logger *zerolog.Logger = nil
 )
 
 var rootCommand = &cobra.Command{
@@ -45,9 +48,6 @@ var launchCommand = &cobra.Command{
 }
 
 func init() {
-	token = os.Getenv("PREV_UPDATER_TOKEN")
-	baseUrl = os.Getenv("PREV_UPDATER_BASEURL")
-
 	launchCommand.Flags().StringVarP(&token, "token", "t", "", "set ADO token (required)")
 	launchCommand.Flags().StringVarP(&baseUrl, "base-url", "b", "https://dev.azure.com/", "set base url")
 	launchCommand.Flags().StringVarP(&organisation, "organisation", "o", "", "set organisation")
@@ -61,15 +61,27 @@ func init() {
 
 	rootCommand.AddCommand(versionCommand)
 	rootCommand.AddCommand(launchCommand)
+
+	_, err := infra.ConfigDirectory()
+	if err != nil {
+		panic(err)
+	}
+	loggerWriter, err := infra.OpenLogFile()
+	if err != nil {
+		panic(err)
+	}
+	logger = infra.NewLogger(loggerWriter)
 }
 
 func main() {
+	defer func() {
+		infra.CloseLogFile()
+	}()
 
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
 	}
-
 }
 
 func funcVersion(cmd *cobra.Command, args []string) {
@@ -92,7 +104,9 @@ func funcStartBatching(cmd *cobra.Command, args []string) {
 	use := usescases.NewAdoUsesCases(repo)
 
 	if err := use.UpdateFieldsByLastRuns(int(pipelineId)); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+		logger.
+			Err(err).
+			Send()
 		os.Exit(EXIT_FAILURE)
 	}
 	os.Exit(EXIT_SUCCESS)

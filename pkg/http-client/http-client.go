@@ -47,9 +47,6 @@ func (h *HttpClient) Patch(path string, body []byte, headers http.Header) (*http
 	request.Header = h.Headers
 	request.Header.Set("Content-Type", "application/json-patch+json")
 	setHeader(request, headers)
-	if err != nil {
-		return nil, err
-	}
 
 	return h.client.Do(request)
 }
