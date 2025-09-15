@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/prev-updater/internal/infra"
-	"github.com/prev-updater/internal/repository"
-	"github.com/prev-updater/internal/usescases"
+	"github.com/Damien-Venant/prev-updater/internal/infra"
+	"github.com/Damien-Venant/prev-updater/internal/repository"
+	"github.com/Damien-Venant/prev-updater/internal/usescases"
 	"github.com/spf13/cobra"
 )
 

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/prev-updater/internal/model"
+	"github.com/Damien-Venant/prev-updater/internal/model"
 )
 
 type AdoRepository interface {

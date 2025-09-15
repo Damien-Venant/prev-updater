@@ -1,4 +1,4 @@
-module github.com/prev-updater
+module github.com/Damien-Venant/prev-updater
 
 go 1.24.1
 
