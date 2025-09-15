@@ -1,8 +1,9 @@
-package main
+package cmd
 
 import (
 	"fmt"
 	"os"
+
 	"github.com/Damien-Venant/prev-updater/internal/infra"
 	"github.com/Damien-Venant/prev-updater/internal/repository"
 	"github.com/Damien-Venant/prev-updater/internal/usescases"
@@ -72,7 +73,7 @@ func init() {
 	logger = infra.NewLogger(loggerWriter)
 }
 
-func main() {
+func Execute() {
 	if err := rootCommand.Execute(); err != nil {
 		os.Exit(exitWithError())
 	}
