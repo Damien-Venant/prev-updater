@@ -74,14 +74,10 @@ func init() {
 }
 
 func main() {
-	defer func() {
-		infra.CloseLogFile()
-	}()
-
 	if err := rootCommand.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
+		os.Exit(exitWithError())
 	}
+	os.Exit(EXIT_SUCCESS)
 }
 
 func funcVersion(cmd *cobra.Command, args []string) {
@@ -107,5 +103,12 @@ func funcStartBatching(cmd *cobra.Command, args []string) {
 		logger.
 			Err(err).
 			Send()
+		os.Exit(exitWithError())
 	}
+}
+
+func exitWithError() int {
+	infra.CloseLogFile()
+
+	return EXIT_FAILURE
 }
