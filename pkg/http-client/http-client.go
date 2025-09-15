@@ -55,7 +55,7 @@ func (h *HttpClient) Patch(path string, body []byte, headers http.Header) (*http
 	url := fmt.Sprintf("%s/%s", h.BaseUrl, path)
 	h.logger.
 		Info().
-		Dict("request-data", zerolog.Dict().Str("url", url).Str("method", "PATCH").Str("", string(body))).
+		Dict("request-data", zerolog.Dict().Str("url", url).Str("method", "PATCH").Str("body", string(body))).
 		Msg("Send request")
 	request, err := http.NewRequest("PATCH", url, bytes.NewReader(body))
 	if err != nil {
