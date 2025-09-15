@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	EXIT_FAILURE int = -1
-	EXIT_SUCCESS     = 0
+	EXIT_FAILURE = -1
+	EXIT_SUCCESS = 0
 )
 
 var (
@@ -101,13 +101,11 @@ func funcStartBatching(cmd *cobra.Command, args []string) {
 	client := infra.GetHttpClient()
 	repo := repository.New(client)
 
-	use := usescases.NewAdoUsesCases(repo)
+	use := usescases.NewAdoUsesCases(repo, logger)
 
 	if err := use.UpdateFieldsByLastRuns(int(pipelineId)); err != nil {
 		logger.
 			Err(err).
 			Send()
-		os.Exit(EXIT_FAILURE)
 	}
-	os.Exit(EXIT_SUCCESS)
 }

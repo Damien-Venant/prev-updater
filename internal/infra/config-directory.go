@@ -2,6 +2,7 @@ package infra
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -23,13 +24,14 @@ func ConfigDirectory() (string, error) {
 		err = os.MkdirAll(prevUpdaterPath, 0750)
 		return "", err
 	}
-	logFileName = path.Join(prevUpdaterPath)
+	logFileName = path.Join(prevUpdaterPath, "prev.log")
 	return prevUpdaterPath, nil
 }
 
 func OpenLogFile() (io.Writer, error) {
 	var err error
-	file, err = os.OpenFile(logFileName, os.O_CREATE, 0750)
+	fmt.Println(logFileName)
+	file, err = os.OpenFile(logFileName, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, err
 	}
