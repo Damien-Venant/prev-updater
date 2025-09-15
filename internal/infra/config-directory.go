@@ -21,9 +21,11 @@ func ConfigDirectory() (string, error) {
 
 	prevUpdaterPath := path.Join(dirName, "prev-udpater")
 	if _, err = os.Stat(prevUpdaterPath); os.IsNotExist(err) {
-		err = os.MkdirAll(prevUpdaterPath, 0750)
-		return "", err
+		if err = os.MkdirAll(prevUpdaterPath, 0750); err != nil {
+			return "", err
+		}
 	}
+
 	logFileName = path.Join(prevUpdaterPath, "prev.log")
 	return prevUpdaterPath, nil
 }
@@ -31,7 +33,7 @@ func ConfigDirectory() (string, error) {
 func OpenLogFile() (io.Writer, error) {
 	var err error
 	fmt.Println(logFileName)
-	file, err = os.OpenFile(logFileName, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	file, err = os.OpenFile(logFileName, os.O_CREATE|os.O_APPEND, 0750)
 	if err != nil {
 		return nil, err
 	}
