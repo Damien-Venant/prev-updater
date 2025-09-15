@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	httpclient "github.com/prev-updater/pkg/http-client"
+	httpclient "github.com/Damien-Venant/prev-updater/pkg/http-client"
 	"github.com/rs/zerolog"
 )
 
