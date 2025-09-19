@@ -1,6 +1,9 @@
 package usescases
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/Damien-Venant/prev-updater/internal/model"
 	"github.com/rs/zerolog"
 )
@@ -45,6 +48,9 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int) error {
 	}
 
 	lastRuns := result[0]
+	r, _ := json.Marshal(lastRuns)
+	fmt.Println(string(r))
+
 	u.Logger.
 		Info().
 		Dict("metadata", zerolog.Dict().Int("pipeline-id", pipelineId)).
@@ -67,14 +73,14 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int) error {
 		return nil
 	}
 
-	for _, workItem := range workItems {
-		err = u.updateFields(workItem.Id, lastRuns.Name)
-		if err != nil {
-			u.Logger.Err(err).Dict("pipeline-id",
-				zerolog.Dict().Int("pipeline-id", pipelineId)).
-				Send()
-		}
-	}
+	//for _, workItem := range workItems {
+	//	err = u.updateFields(workItem.Id, lastRuns.Name)
+	//	if err != nil {
+	//		u.Logger.Err(err).Dict("pipeline-id",
+	//			zerolog.Dict().Int("pipeline-id", pipelineId)).
+	//			Send()
+	//	}
+	//}
 	return nil
 }
 

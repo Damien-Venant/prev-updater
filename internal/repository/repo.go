@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
+	"time"
 
 	"github.com/Damien-Venant/prev-updater/internal/model"
 	httpclient "github.com/Damien-Venant/prev-updater/pkg/http-client"
@@ -41,8 +43,7 @@ func New(client *httpclient.HttpClient) *AzureDevOpsRepository {
 }
 
 func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) ([]model.PipelineRuns, error) {
-	type PipelineRuns model.PaginatedValue[model.PipelineRuns]
-	var paginationValue PipelineRuns
+	type PipelineRuns model.PaginatedValue[map[string]interface{}]
 	url := r.configureRouteWithVersion("pipelines/%d/runs", pipelineId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
@@ -53,11 +54,46 @@ func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) ([]model.Pipelin
 		return []model.PipelineRuns{}, err
 	}
 
+	var paginationValue PipelineRuns
 	if err := readAndUnmarshal[PipelineRuns](httpResponse.Body, &paginationValue); err != nil {
 		return []model.PipelineRuns{}, err
 	}
 
-	return paginationValue.Value, err
+	pipelineRuns := make([]model.PipelineRuns, paginationValue.Count)
+	outChan := make(chan model.PipelineRuns)
+	errChan := make(chan error)
+
+	for i := 0; i < paginationValue.Count; i++ {
+		runId, ok := paginationValue.Value[i]["id"].(float64)
+		if !ok {
+			return []model.PipelineRuns{}, err
+		}
+		go r.batchGetPipelineRunRequest(pipelineId, int(runId), outChan, errChan)
+	}
+
+	for i := 0; i < paginationValue.Count; i++ {
+		select {
+		case res := <-outChan:
+			pipelineRuns[i] = res
+		case err := <-errChan:
+			return []model.PipelineRuns{}, err
+		case <-time.After(time.Second * 5):
+			return []model.PipelineRuns{}, errors.New("Timeout")
+		}
+	}
+
+	slices.SortStableFunc(pipelineRuns, func(i, j model.PipelineRuns) int {
+		return j.Id - i.Id
+	})
+	return pipelineRuns, err
+}
+
+func (r *AzureDevOpsRepository) batchGetPipelineRunRequest(pipelineId int, runId int, outChan chan model.PipelineRuns, errChan chan error) {
+	if res, err := r.GetPipelineRun(pipelineId, int(runId)); err != nil {
+		errChan <- err
+	} else {
+		outChan <- *res
+	}
 }
 
 func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) (*model.PipelineRuns, error) {
