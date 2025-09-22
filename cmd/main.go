@@ -63,6 +63,7 @@ func init() {
 	launchCommand.MarkFlagRequired("project")
 	launchCommand.MarkFlagRequired("pipeline-id")
 	launchCommand.MarkFlagRequired("repository")
+	launchCommand.MarkFlagRequired("field")
 
 	rootCommand.AddCommand(versionCommand)
 	rootCommand.AddCommand(launchCommand)

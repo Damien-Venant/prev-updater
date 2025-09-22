@@ -91,7 +91,7 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, fiel
 	}
 
 	for _, workItem := range workItems {
-		err = u.updateFields(workItem.Id, lastRuns.Name)
+		err = u.updateFields(workItem.Id, lastRuns.Name, fieldName)
 		if err != nil {
 			u.Logger.Err(err).Dict("pipeline-id",
 				zerolog.Dict().Int("pipeline-id", pipelineId)).
@@ -105,11 +105,11 @@ func (u *AdoUsesCases) UpdateFieldsByPipelineId(pipelineId int) error {
 	return nil
 }
 
-func (u *AdoUsesCases) updateFields(woritemId, name string) error {
+func (u *AdoUsesCases) updateFields(woritemId, name, fieldName string) error {
 	repo := u.Repository
 	modelToUpdload := model.OperationFields{
 		Op:    "add",
-		Path:  "/fields/Custom.c14cc8ed-7be8-4c1a-92b3-ebe7f8923d18",
+		Path:  fieldName,
 		Value: name,
 	}
 
