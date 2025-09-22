@@ -13,6 +13,7 @@ type AdoRepository interface {
 	GetPipelineRun(pipelineId, runId int) (*model.PipelineRuns, error)
 	GetBuildWorkItem(buildId int) ([]model.BuildWorkItems, error)
 	GetWorkitem(workItemId int) (*model.BuildWorkItems, error)
+	GetRepositoryById(uuid string) (*model.Repository, error)
 	UpdateWorkitemField(workItemId string, operation model.OperationFields) error
 }
 
@@ -28,7 +29,7 @@ func NewAdoUsesCases(adoRepository AdoRepository, logger *zerolog.Logger) *AdoUs
 	}
 }
 
-func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int) error {
+func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, fieldName string) error {
 	adoRep := u.Repository
 	u.Logger.Info().
 		Dict("metadata", zerolog.Dict().Int("pipeline-id", pipelineId)).

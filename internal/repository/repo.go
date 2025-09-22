@@ -55,7 +55,7 @@ func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) ([]model.Pipelin
 	}
 
 	var paginationValue PipelineRuns
-	if err := readAndUnmarshal[PipelineRuns](httpResponse.Body, &paginationValue); err != nil {
+	if err := readAndUnmarshal(httpResponse.Body, &paginationValue); err != nil {
 		return []model.PipelineRuns{}, err
 	}
 
@@ -108,7 +108,7 @@ func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) (*model.Pi
 		return nil, err
 	}
 
-	if err := readAndUnmarshal[model.PipelineRuns](httpResponse.Body, &result); err != nil {
+	if err := readAndUnmarshal(httpResponse.Body, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -127,7 +127,7 @@ func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) ([]model.BuildWork
 		return []model.BuildWorkItems{}, err
 	}
 
-	if err := readAndUnmarshal[BuildWorkItems](httpResponse.Body, &workItem); err != nil {
+	if err := readAndUnmarshal(httpResponse.Body, &workItem); err != nil {
 		return []model.BuildWorkItems{}, err
 	}
 	return workItem.Value, nil
@@ -145,7 +145,7 @@ func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) (*model.BuildWorkIte
 		return nil, err
 	}
 
-	if err := readAndUnmarshal[model.BuildWorkItems](httpResponse.Body, &buildWorkItems); err != nil {
+	if err := readAndUnmarshal(httpResponse.Body, &buildWorkItems); err != nil {
 		return nil, err
 	}
 	return &buildWorkItems, nil
@@ -166,6 +166,22 @@ func (r *AzureDevOpsRepository) UpdateWorkitemField(workItemId string, operation
 	}
 
 	return nil
+}
+
+func (r *AzureDevOpsRepository) GetRepositoryById(uuid string) (*model.Repository, error) {
+	var result model.Repository
+	url := r.configureRouteWithVersion("git/repositories/%s", uuid)
+	httpResponse, err := r.client.Get(url, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := treatResult(httpResponse, http.StatusOK); err != nil {
+		return nil, err
+	}
+	if err := readAndUnmarshal(httpResponse.Body, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 func (r *AzureDevOpsRepository) configureRouteWithVersion(route string, values ...any) string {

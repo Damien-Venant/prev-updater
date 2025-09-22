@@ -36,4 +36,12 @@ type (
 		Path  string `json:"path"`
 		Value string `json:"value"`
 	}
+
+	Repository struct {
+		Id            string `json:"id"`
+		Name          string `json:"name"`
+		DefaultBranch string `json:"defaultBranch"`
+		Url           string `json:"url"`
+		RemoteUrl     string `json:"remoteUrl"`
+	}
 )
