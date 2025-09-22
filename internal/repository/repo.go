@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/Damien-Venant/prev-updater/internal/model"
@@ -114,10 +115,10 @@ func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) (*model.Pi
 	return &result, nil
 }
 
-func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) ([]model.BuildWorkItems, error) {
+func (r *AzureDevOpsRepository) GetBuildWorkItem(fromBuildId, toBuildId int) ([]model.BuildWorkItems, error) {
 	type BuildWorkItems model.PaginatedValue[model.BuildWorkItems]
 	var workItem BuildWorkItems
-	url := r.configureRouteWithVersion("build/builds/%d/workitems", buildId)
+	url := r.configureRouteWithVersion("build/workitems?fromBuildId=%d&toBuildId=%d", fromBuildId, toBuildId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return []model.BuildWorkItems{}, err
@@ -186,7 +187,12 @@ func (r *AzureDevOpsRepository) GetRepositoryById(uuid string) (*model.Repositor
 
 func (r *AzureDevOpsRepository) configureRouteWithVersion(route string, values ...any) string {
 	url := fmt.Sprintf(route, values...)
-	url = fmt.Sprintf("_apis/%s?api-version=%s", url, r.version)
+	if strings.Contains(url, "?") {
+		url = fmt.Sprintf("_apis/%s&api-version=%s", url, r.version)
+
+	} else {
+		url = fmt.Sprintf("_apis/%s?api-version=%s", url, r.version)
+	}
 	return url
 }
 
