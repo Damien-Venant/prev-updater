@@ -7,10 +7,18 @@ type (
 	}
 
 	PipelineRuns struct {
-		Id     int    `json:"id"`
-		Name   string `json:"name"`
-		State  string `json:"state"`
-		Result string `json:"result"`
+		Id        int    `json:"id"`
+		Name      string `json:"name"`
+		State     string `json:"state"`
+		Result    string `json:"result"`
+		Resources *struct {
+			Repositories *struct {
+				Self struct {
+					RefName string `json:"refName"`
+					Version string `json:"Version"`
+				} `json:"self"`
+			} `json:"repositories"`
+		} `json:"resources"`
 	}
 
 	BuildChanges struct {
@@ -27,5 +35,13 @@ type (
 		Op    string `json:"op"`
 		Path  string `json:"path"`
 		Value string `json:"value"`
+	}
+
+	Repository struct {
+		Id            string `json:"id"`
+		Name          string `json:"name"`
+		DefaultBranch string `json:"defaultBranch"`
+		Url           string `json:"url"`
+		RemoteUrl     string `json:"remoteUrl"`
 	}
 )

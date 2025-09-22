@@ -19,16 +19,30 @@ func TestConfigureRouteWithVersion(t *testing.T) {
 		wants      string
 	}{
 		{
-			name:       "multi-param",
+			name:       "MultiParam",
 			route:      "/api/%s/%d",
 			parameters: []any{"test", 10},
 			version:    AzureDevOpsRepository{version: "7.1"},
 			wants:      "/api/test/10?api-version=7.1",
 		},
 		{
-			name:       "mono-param",
+			name:       "MonoParam",
 			route:      "/api/%d",
 			parameters: []any{10},
+			version:    AzureDevOpsRepository{version: "7.5"},
+			wants:      "/api/10?api-version=7.5",
+		},
+		{
+			name:       "MultiParamWithQueryParameter",
+			route:      "/api/%s/%d?date=%s",
+			parameters: []any{"test", 10, "test"},
+			version:    AzureDevOpsRepository{version: "7.1"},
+			wants:      "/api/test/10?api-version=7.1",
+		},
+		{
+			name:       "MonoParamWithQueryParameter",
+			route:      "/api/%d?date=%s",
+			parameters: []any{10, "test"},
 			version:    AzureDevOpsRepository{version: "7.5"},
 			wants:      "/api/10?api-version=7.5",
 		},

@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
+	"strings"
+	"time"
 
 	"github.com/Damien-Venant/prev-updater/internal/model"
 	httpclient "github.com/Damien-Venant/prev-updater/pkg/http-client"
@@ -41,8 +44,7 @@ func New(client *httpclient.HttpClient) *AzureDevOpsRepository {
 }
 
 func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) ([]model.PipelineRuns, error) {
-	type PipelineRuns model.PaginatedValue[model.PipelineRuns]
-	var paginationValue PipelineRuns
+	type PipelineRuns model.PaginatedValue[map[string]interface{}]
 	url := r.configureRouteWithVersion("pipelines/%d/runs", pipelineId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
@@ -53,11 +55,46 @@ func (r *AzureDevOpsRepository) GetPipelineRuns(pipelineId int) ([]model.Pipelin
 		return []model.PipelineRuns{}, err
 	}
 
-	if err := readAndUnmarshal[PipelineRuns](httpResponse.Body, &paginationValue); err != nil {
+	var paginationValue PipelineRuns
+	if err := readAndUnmarshal(httpResponse.Body, &paginationValue); err != nil {
 		return []model.PipelineRuns{}, err
 	}
 
-	return paginationValue.Value, err
+	pipelineRuns := make([]model.PipelineRuns, paginationValue.Count)
+	outChan := make(chan model.PipelineRuns)
+	errChan := make(chan error)
+
+	for i := 0; i < paginationValue.Count; i++ {
+		runId, ok := paginationValue.Value[i]["id"].(float64)
+		if !ok {
+			return []model.PipelineRuns{}, err
+		}
+		go r.batchGetPipelineRunRequest(pipelineId, int(runId), outChan, errChan)
+	}
+
+	for i := 0; i < paginationValue.Count; i++ {
+		select {
+		case res := <-outChan:
+			pipelineRuns[i] = res
+		case err := <-errChan:
+			return []model.PipelineRuns{}, err
+		case <-time.After(time.Second * 5):
+			return []model.PipelineRuns{}, errors.New("Timeout")
+		}
+	}
+
+	slices.SortStableFunc(pipelineRuns, func(i, j model.PipelineRuns) int {
+		return j.Id - i.Id
+	})
+	return pipelineRuns, err
+}
+
+func (r *AzureDevOpsRepository) batchGetPipelineRunRequest(pipelineId int, runId int, outChan chan model.PipelineRuns, errChan chan error) {
+	if res, err := r.GetPipelineRun(pipelineId, int(runId)); err != nil {
+		errChan <- err
+	} else {
+		outChan <- *res
+	}
 }
 
 func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) (*model.PipelineRuns, error) {
@@ -72,16 +109,16 @@ func (r *AzureDevOpsRepository) GetPipelineRun(pipelineId, runId int) (*model.Pi
 		return nil, err
 	}
 
-	if err := readAndUnmarshal[model.PipelineRuns](httpResponse.Body, &result); err != nil {
+	if err := readAndUnmarshal(httpResponse.Body, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) ([]model.BuildWorkItems, error) {
+func (r *AzureDevOpsRepository) GetBuildWorkItem(fromBuildId, toBuildId int) ([]model.BuildWorkItems, error) {
 	type BuildWorkItems model.PaginatedValue[model.BuildWorkItems]
 	var workItem BuildWorkItems
-	url := r.configureRouteWithVersion("build/builds/%d/workitems", buildId)
+	url := r.configureRouteWithVersion("build/workitems?fromBuildId=%d&toBuildId=%d", fromBuildId, toBuildId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return []model.BuildWorkItems{}, err
@@ -91,7 +128,7 @@ func (r *AzureDevOpsRepository) GetBuildWorkItem(buildId int) ([]model.BuildWork
 		return []model.BuildWorkItems{}, err
 	}
 
-	if err := readAndUnmarshal[BuildWorkItems](httpResponse.Body, &workItem); err != nil {
+	if err := readAndUnmarshal(httpResponse.Body, &workItem); err != nil {
 		return []model.BuildWorkItems{}, err
 	}
 	return workItem.Value, nil
@@ -109,7 +146,7 @@ func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) (*model.BuildWorkIte
 		return nil, err
 	}
 
-	if err := readAndUnmarshal[model.BuildWorkItems](httpResponse.Body, &buildWorkItems); err != nil {
+	if err := readAndUnmarshal(httpResponse.Body, &buildWorkItems); err != nil {
 		return nil, err
 	}
 	return &buildWorkItems, nil
@@ -132,9 +169,30 @@ func (r *AzureDevOpsRepository) UpdateWorkitemField(workItemId string, operation
 	return nil
 }
 
+func (r *AzureDevOpsRepository) GetRepositoryById(uuid string) (*model.Repository, error) {
+	var result model.Repository
+	url := r.configureRouteWithVersion("git/repositories/%s", uuid)
+	httpResponse, err := r.client.Get(url, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := treatResult(httpResponse, http.StatusOK); err != nil {
+		return nil, err
+	}
+	if err := readAndUnmarshal(httpResponse.Body, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (r *AzureDevOpsRepository) configureRouteWithVersion(route string, values ...any) string {
 	url := fmt.Sprintf(route, values...)
-	url = fmt.Sprintf("_apis/%s?api-version=%s", url, r.version)
+	if strings.Contains(url, "?") {
+		url = fmt.Sprintf("_apis/%s&api-version=%s", url, r.version)
+
+	} else {
+		url = fmt.Sprintf("_apis/%s?api-version=%s", url, r.version)
+	}
 	return url
 }
 
