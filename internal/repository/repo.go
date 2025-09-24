@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	NotFoundError       error = errors.New("Ressource not found")
+	NotFoundError       error = errors.New("Resource not found")
 	InternalServerError error = errors.New("Internal server error")
 	BadRequestError     error = errors.New("Bad request error")
 	IdkError            error = errors.New("IDK what's happened")
