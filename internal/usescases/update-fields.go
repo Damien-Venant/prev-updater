@@ -45,60 +45,43 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, fiel
 			Warn().Msg("GetPipelinesRuns return no data")
 		return nil
 	}
+
+	//for _, workItem := range workItems {
+	//	err = u.updateFields(workItem.Id, lastRuns.Name, fieldName)
+	//	if err != nil {
+	//		u.Logger.Err(err).Dict("pipeline-id",
+	//			zerolog.Dict().Int("pipeline-id", pipelineId)).
+	//			Send()
+	//	}
+	//}
+	return nil
+}
+
+// getRunsToUpdate is used to return last build and N-1 last build
+// It's return a array where the first index is last build and second index is N-1 last build
+// If the build have not previous build the N-1 last build is last build on defaultBranch
+func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId string, pipelineId int) ([]model.PipelineRuns, error) {
+	adoRep := u.Repository
 	defaultRefName, err := adoRep.GetRepositoryById(repositoryId)
 	if err != nil {
-		u.Logger.Error().
-			Err(err).
-			Stack().
-			Dict("metadata", zerolog.Dict().Int("pipeline-id", pipelineId)).
-			Send()
-		return err
+		return nil, err
+	}
+	builds = queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
+		return pre.State == "completed"
+	})
+	buildsOnSameRef := queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
+		return pre.Resources.Repositories.Self.RefName == builds[0].Resources.Repositories.Self.RefName
+	})
+
+	if len(buildsOnSameRef) > 1 {
+		return []model.PipelineRuns{builds[0], builds[1]}, nil
 	}
 
-	var beforeRuns model.PipelineRuns
-	lastRuns := result[0]
-	if len(result) > 0 {
-		beforeRuns = result[1]
-	} else {
-		beforeRuns = lastRuns
-	}
+	lastBuildOnDefaultRefName := queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
+		return pre.Resources.Repositories.Self.RefName == defaultRefName.DefaultBranch
+	})[0]
 
-	actualRefName := lastRuns.Resources.Repositories.Self.RefName
-	if actualRefName != defaultRefName.DefaultBranch {
-		filterRuns := queryslice.Filter(result[1:len(result)-1], func(pre model.PipelineRuns) bool {
-			return pre.Resources.Repositories.Self.RefName == actualRefName
-		})
-		if len(filterRuns) > 0 {
-			beforeRuns = filterRuns[0]
-		}
-	}
-	//Get all WorkItems
-	workItems, err := adoRep.GetBuildWorkItem(beforeRuns.Id, lastRuns.Id)
-	if err != nil {
-		u.Logger.
-			Error().
-			Err(err).
-			Stack().
-			Dict("metadata", zerolog.Dict().Int("pipeline-id", pipelineId)).
-			Send()
-		return err
-	} else if len(workItems) == 0 {
-		u.Logger.
-			Warn().
-			Dict("metadata", zerolog.Dict().Int("pipeline-id", pipelineId)).
-			Msgf("GetBuildWorkitem return no data, pipeline id : %d", lastRuns.Id)
-		return nil
-	}
-
-	for _, workItem := range workItems {
-		err = u.updateFields(workItem.Id, lastRuns.Name, fieldName)
-		if err != nil {
-			u.Logger.Err(err).Dict("pipeline-id",
-				zerolog.Dict().Int("pipeline-id", pipelineId)).
-				Send()
-		}
-	}
-	return nil
+	return []model.PipelineRuns{builds[0], lastBuildOnDefaultRefName}, nil
 }
 
 func (u *AdoUsesCases) UpdateFieldsByPipelineId(pipelineId int) error {
