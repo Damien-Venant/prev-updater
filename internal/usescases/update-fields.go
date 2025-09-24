@@ -1,6 +1,8 @@
 package usescases
 
 import (
+	"strings"
+
 	"github.com/Damien-Venant/prev-updater/internal/model"
 	"github.com/Damien-Venant/prev-updater/pkg/queryslice"
 	"github.com/rs/zerolog"
@@ -10,7 +12,7 @@ type AdoRepository interface {
 	GetPipelineRuns(pipelineId int) ([]model.PipelineRuns, error)
 	GetPipelineRun(pipelineId, runId int) (*model.PipelineRuns, error)
 	GetBuildWorkItem(fromBuildId, toBuildId int) ([]model.BuildWorkItems, error)
-	GetWorkitem(workItemId int) (*model.BuildWorkItems, error)
+	GetWorkItem(workItemId string) (*model.WorkItem, error)
 	GetRepositoryById(uuid string) (*model.Repository, error)
 	UpdateWorkitemField(workItemId string, operation model.OperationFields) error
 }
@@ -44,6 +46,16 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, fiel
 		u.Logger.
 			Warn().Msg("GetPipelinesRuns return no data")
 		return nil
+	}
+
+	_, err = u.getRunsToUpdate(result, repositoryId, pipelineId)
+	if err != nil {
+		u.Logger.Error().
+			Err(err).
+			Stack().
+			Dict("metadata", zerolog.Dict().Int("pipeline-id", pipelineId)).
+			Send()
+		return err
 	}
 
 	//for _, workItem := range workItems {
@@ -82,6 +94,34 @@ func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId
 	})[0]
 
 	return []model.PipelineRuns{builds[0], lastBuildOnDefaultRefName}, nil
+}
+
+func (u *AdoUsesCases) getAllWorkItemsToUpdatePrev(builds []model.PipelineRuns) ([]model.WorkItem, error) {
+	adoRep := u.Repository
+	buildWorkItems, err := adoRep.GetBuildWorkItem(builds[1].Id, builds[0].Id)
+	if err != nil {
+		return []model.WorkItem{}, err
+	}
+
+	workItems := queryslice.TransformParallel(buildWorkItems, func(val model.BuildWorkItems, _ int) model.WorkItem {
+		workItem, err := adoRep.GetWorkItem(val.Id)
+		if err != nil {
+			return model.WorkItem{}
+		}
+		return *workItem
+	})
+
+	version := builds[0].Name
+	workItems = queryslice.Filter(workItems, func(pre model.WorkItem) bool {
+		workItemVersion, _ := pre.Fields["Microsoft.VSTS.Build.IntegrationBuild"].(string)
+		if workItemVersion == "" {
+			return true
+		}
+		res := strings.Compare(workItemVersion, version)
+		return res == 1
+	})
+
+	return workItems, nil
 }
 
 func (u *AdoUsesCases) UpdateFieldsByPipelineId(pipelineId int) error {

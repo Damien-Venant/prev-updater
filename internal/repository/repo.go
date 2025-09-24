@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/Damien-Venant/prev-updater/internal/model"
-	httpclient "github.com/Damien-Venant/prev-updater/pkg/http-client"
+	httpClient "github.com/Damien-Venant/prev-updater/pkg/http-client"
 )
 
 const (
@@ -32,11 +32,11 @@ var mappingError map[int]error = map[int]error{
 }
 
 type AzureDevOpsRepository struct {
-	client  *httpclient.HttpClient
+	client  *httpClient.HttpClient
 	version string
 }
 
-func New(client *httpclient.HttpClient) *AzureDevOpsRepository {
+func New(client *httpClient.HttpClient) *AzureDevOpsRepository {
 	return &AzureDevOpsRepository{
 		client:  client,
 		version: apiVersion,
@@ -134,9 +134,9 @@ func (r *AzureDevOpsRepository) GetBuildWorkItem(fromBuildId, toBuildId int) ([]
 	return workItem.Value, nil
 }
 
-func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) (*model.BuildWorkItems, error) {
-	var buildWorkItems model.BuildWorkItems
-	url := r.configureRouteWithVersion("wit/workItems/%d", workItemId)
+func (r *AzureDevOpsRepository) GetWorkItem(workItemId string) (*model.WorkItem, error) {
+	var buildWorkItems model.WorkItem
+	url := r.configureRouteWithVersion("wit/workItems/%s", workItemId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return nil, err

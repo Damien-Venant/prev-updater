@@ -26,19 +26,25 @@ func (m *MockRepository) GetPipelineRun(pipelineId, runId int) (*model.PipelineR
 	return nil, nil
 }
 func (m *MockRepository) GetBuildWorkItem(fromBuildId, toBuildId int) ([]model.BuildWorkItems, error) {
-	return nil, nil
+	args := m.Called(fromBuildId, toBuildId)
+	val := args.Get(0).([]model.BuildWorkItems)
+	return val, args.Error(1)
 }
-func (m *MockRepository) GetWorkitem(workItemId int) (*model.BuildWorkItems, error) {
-	return nil, nil
+func (m *MockRepository) GetWorkItem(workItemId string) (*model.WorkItem, error) {
+	args := m.Called(workItemId)
+	val := args.Get(0).(model.WorkItem)
+	return &val, args.Error(1)
 }
 func (m *MockRepository) UpdateWorkitemField(workItemId string, operation model.OperationFields) error {
 	return nil
 }
 
 // Setup d’un run
-func createPipelineRun(ref string) model.PipelineRuns {
+func createPipelineRun(ref string, name string, id int) model.PipelineRuns {
 	return model.PipelineRuns{
+		Id:    id,
 		State: "completed",
+		Name:  name,
 		Resources: &struct {
 			Repositories *struct {
 				Self struct {
@@ -67,9 +73,9 @@ func TestGetRunsToUpdate_TwoBuildsOnSameRef(t *testing.T) {
 	uc := &AdoUsesCases{Repository: mockRepo}
 
 	builds := []model.PipelineRuns{
-		createPipelineRun("refs/heads/feature-1"),
-		createPipelineRun("refs/heads/feature-1"),
-		createPipelineRun("refs/heads/main"),
+		createPipelineRun("refs/heads/feature-1", "", 1),
+		createPipelineRun("refs/heads/feature-1", "", 2),
+		createPipelineRun("refs/heads/main", "", 3),
 	}
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
@@ -86,9 +92,9 @@ func TestGetRunsToUpdate_OnlyOneBuildOnRef(t *testing.T) {
 	uc := &AdoUsesCases{Repository: mockRepo}
 
 	builds := []model.PipelineRuns{
-		createPipelineRun("refs/heads/feature-1"), // only one on feature-1
-		createPipelineRun("refs/heads/main"),      // default branch
-		createPipelineRun("refs/heads/main"),
+		createPipelineRun("refs/heads/feature-1", "", 1), // only one on feature-1
+		createPipelineRun("refs/heads/main", "", 2),      // default branch
+		createPipelineRun("refs/heads/main", "", 3),
 	}
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
@@ -105,8 +111,8 @@ func TestGetRunsToUpdate_RepositoryError(t *testing.T) {
 	uc := &AdoUsesCases{Repository: mockRepo}
 
 	builds := []model.PipelineRuns{
-		createPipelineRun("refs/heads/feature-1"),
-		createPipelineRun("refs/heads/main"),
+		createPipelineRun("refs/heads/feature-1", "", 1),
+		createPipelineRun("refs/heads/main", "", 2),
 	}
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{}, errors.New("db error"))
@@ -115,4 +121,79 @@ func TestGetRunsToUpdate_RepositoryError(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
+}
+
+func TestGetAllWorkItemsToUpdatePrev_OnlyWorkItemWithUpperVersionThanBuild(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := &AdoUsesCases{Repository: mockRepo}
+
+	builds := []model.PipelineRuns{
+		createPipelineRun("", "25.5.5.5", 1),
+		createPipelineRun("", "25.5.5.4", 2),
+	}
+
+	mockRepo.On("GetBuildWorkItem", mock.Anything, mock.Anything).Return([]model.BuildWorkItems{
+		{Id: "1"}, {Id: "2"}, {Id: "3"},
+	}, nil)
+
+	mockRepo.On("GetWorkItem", "1").Return(model.WorkItem{
+		Id: "1",
+		Fields: map[string]interface{}{
+			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.8.5",
+		},
+	}, nil)
+	mockRepo.On("GetWorkItem", "2").Return(model.WorkItem{
+		Id: "2",
+		Fields: map[string]interface{}{
+			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.5.8",
+		},
+	}, nil)
+	mockRepo.On("GetWorkItem", "3").Return(model.WorkItem{
+		Id: "3",
+		Fields: map[string]interface{}{
+			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.5.3",
+		},
+	}, nil)
+
+	result, _ := uc.getAllWorkItemsToUpdatePrev(builds)
+	assert.Equal(t, 2, len(result))
+	for _, res := range result {
+		assert.Contains(t, []string{"1", "2"}, res.Id)
+	}
+}
+
+func TestGetAllWorkItemsToUpdatePrev_ReturnZeroWorkItemWhenWorkItemVersionIsLower(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := &AdoUsesCases{Repository: mockRepo}
+
+	builds := []model.PipelineRuns{
+		createPipelineRun("", "25.5.5.5", 1),
+		createPipelineRun("", "25.5.5.4", 2),
+	}
+
+	mockRepo.On("GetBuildWorkItem", mock.Anything, mock.Anything).Return([]model.BuildWorkItems{
+		{Id: "1"}, {Id: "2"}, {Id: "3"},
+	}, nil)
+
+	mockRepo.On("GetWorkItem", "1").Return(model.WorkItem{
+		Id: "1",
+		Fields: map[string]interface{}{
+			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.5",
+		},
+	}, nil)
+	mockRepo.On("GetWorkItem", "2").Return(model.WorkItem{
+		Id: "2",
+		Fields: map[string]interface{}{
+			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.8",
+		},
+	}, nil)
+	mockRepo.On("GetWorkItem", "3").Return(model.WorkItem{
+		Id: "3",
+		Fields: map[string]interface{}{
+			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.3",
+		},
+	}, nil)
+
+	result, _ := uc.getAllWorkItemsToUpdatePrev(builds)
+	assert.Equal(t, 0, len(result))
 }
