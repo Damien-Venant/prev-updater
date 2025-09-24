@@ -48,7 +48,7 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, fiel
 		return nil
 	}
 
-	_, err = u.getRunsToUpdate(result, repositoryId, pipelineId)
+	builds, err := u.getRunsToUpdate(result, repositoryId, pipelineId)
 	if err != nil {
 		u.Logger.Error().
 			Err(err).
@@ -57,6 +57,18 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, fiel
 			Send()
 		return err
 	}
+
+	workItems, err := u.getAllWorkItems(builds)
+	if err != nil {
+		u.Logger.Error().
+			Err(err).
+			Stack().
+			Dict("metatdata", zerolog.Dict().Int("pipeline-id", pipelineId)).
+			Send()
+		return err
+	}
+
+	_ = u.getAllWorkItemsToUpdatePrev(workItems, builds[0].Name)
 
 	//for _, workItem := range workItems {
 	//	err = u.updateFields(workItem.Id, lastRuns.Name, fieldName)
@@ -96,7 +108,7 @@ func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId
 	return []model.PipelineRuns{builds[0], lastBuildOnDefaultRefName}, nil
 }
 
-func (u *AdoUsesCases) getAllWorkItemsToUpdatePrev(builds []model.PipelineRuns) ([]model.WorkItem, error) {
+func (u *AdoUsesCases) getAllWorkItems(builds []model.PipelineRuns) ([]model.WorkItem, error) {
 	adoRep := u.Repository
 	buildWorkItems, err := adoRep.GetBuildWorkItem(builds[1].Id, builds[0].Id)
 	if err != nil {
@@ -111,17 +123,19 @@ func (u *AdoUsesCases) getAllWorkItemsToUpdatePrev(builds []model.PipelineRuns) 
 		return *workItem
 	})
 
-	version := builds[0].Name
+	return workItems, nil
+}
+
+func (u *AdoUsesCases) getAllWorkItemsToUpdatePrev(workItems []model.WorkItem, version string) []model.WorkItem {
 	workItems = queryslice.Filter(workItems, func(pre model.WorkItem) bool {
 		workItemVersion, _ := pre.Fields["Microsoft.VSTS.Build.IntegrationBuild"].(string)
 		if workItemVersion == "" {
 			return true
 		}
-		res := strings.Compare(workItemVersion, version)
-		return res == 1
+		return strings.Compare(workItemVersion, version) == 1
 	})
 
-	return workItems, nil
+	return workItems
 }
 
 func (u *AdoUsesCases) UpdateFieldsByPipelineId(pipelineId int) error {

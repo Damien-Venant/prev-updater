@@ -127,35 +127,27 @@ func TestGetAllWorkItemsToUpdatePrev_OnlyWorkItemWithUpperVersionThanBuild(t *te
 	mockRepo := new(MockRepository)
 	uc := &AdoUsesCases{Repository: mockRepo}
 
-	builds := []model.PipelineRuns{
-		createPipelineRun("", "25.5.5.5", 1),
-		createPipelineRun("", "25.5.5.4", 2),
+	builds := []model.WorkItem{
+		{
+			Id: "1",
+			Fields: map[string]interface{}{
+				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.8.5",
+			},
+		},
+		{
+			Id: "2",
+			Fields: map[string]interface{}{
+				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.5.8",
+			},
+		},
+		{
+			Id: "3",
+			Fields: map[string]interface{}{
+				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.5.3",
+			},
+		},
 	}
-
-	mockRepo.On("GetBuildWorkItem", mock.Anything, mock.Anything).Return([]model.BuildWorkItems{
-		{Id: "1"}, {Id: "2"}, {Id: "3"},
-	}, nil)
-
-	mockRepo.On("GetWorkItem", "1").Return(model.WorkItem{
-		Id: "1",
-		Fields: map[string]interface{}{
-			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.8.5",
-		},
-	}, nil)
-	mockRepo.On("GetWorkItem", "2").Return(model.WorkItem{
-		Id: "2",
-		Fields: map[string]interface{}{
-			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.5.8",
-		},
-	}, nil)
-	mockRepo.On("GetWorkItem", "3").Return(model.WorkItem{
-		Id: "3",
-		Fields: map[string]interface{}{
-			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.5.3",
-		},
-	}, nil)
-
-	result, _ := uc.getAllWorkItemsToUpdatePrev(builds)
+	result := uc.getAllWorkItemsToUpdatePrev(builds, "25.5.5.5")
 	assert.Equal(t, 2, len(result))
 	for _, res := range result {
 		assert.Contains(t, []string{"1", "2"}, res.Id)
@@ -166,34 +158,26 @@ func TestGetAllWorkItemsToUpdatePrev_ReturnZeroWorkItemWhenWorkItemVersionIsLowe
 	mockRepo := new(MockRepository)
 	uc := &AdoUsesCases{Repository: mockRepo}
 
-	builds := []model.PipelineRuns{
-		createPipelineRun("", "25.5.5.5", 1),
-		createPipelineRun("", "25.5.5.4", 2),
+	builds := []model.WorkItem{
+		{
+			Id: "1",
+			Fields: map[string]interface{}{
+				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.5",
+			},
+		},
+		{
+			Id: "2",
+			Fields: map[string]interface{}{
+				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.8",
+			},
+		},
+		{
+			Id: "3",
+			Fields: map[string]interface{}{
+				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.3",
+			},
+		},
 	}
-
-	mockRepo.On("GetBuildWorkItem", mock.Anything, mock.Anything).Return([]model.BuildWorkItems{
-		{Id: "1"}, {Id: "2"}, {Id: "3"},
-	}, nil)
-
-	mockRepo.On("GetWorkItem", "1").Return(model.WorkItem{
-		Id: "1",
-		Fields: map[string]interface{}{
-			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.5",
-		},
-	}, nil)
-	mockRepo.On("GetWorkItem", "2").Return(model.WorkItem{
-		Id: "2",
-		Fields: map[string]interface{}{
-			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.8",
-		},
-	}, nil)
-	mockRepo.On("GetWorkItem", "3").Return(model.WorkItem{
-		Id: "3",
-		Fields: map[string]interface{}{
-			"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.3",
-		},
-	}, nil)
-
-	result, _ := uc.getAllWorkItemsToUpdatePrev(builds)
+	result := uc.getAllWorkItemsToUpdatePrev(builds, "25.5.5.5")
 	assert.Equal(t, 0, len(result))
 }
