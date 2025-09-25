@@ -133,7 +133,7 @@ func TestQuerySliceTransformParallel(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("TestQuerySliceTransformParallel_%s", test.name), func(te *testing.T) {
-			result := Transform(test.values, test.transformFunc)
+			result := TransformParallel(test.values, test.transformFunc)
 			assert.Equal(te, test.results, result)
 		})
 	}
