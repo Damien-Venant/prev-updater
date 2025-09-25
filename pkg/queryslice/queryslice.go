@@ -1,5 +1,9 @@
 package queryslice
 
+import (
+	"slices"
+)
+
 type Predicate[T any] func(predicate T) bool
 type Trans[T any, K any] func(trans T, index int) K
 
@@ -25,18 +29,31 @@ func Transform[T any, K any](source []T, transFunc Trans[T, K]) []K {
 // TransformParallel is used to make transform in parallel with goroutines
 // If you transform some data with an call like API Call, Query or another I/O operation we recommend to used this function else use Transform
 func TransformParallel[T any, K any](source []T, transFunc Trans[T, K]) []K {
+	type valIndex struct {
+		index int
+		value K
+	}
 	srcLength := len(source)
-	resultChan := make(chan K, srcLength)
+	resultChan := make(chan valIndex, srcLength)
 	for index, val := range source {
 		go func() {
-			resultChan <- transFunc(val, index)
+			res := transFunc(val, index)
+			resultChan <- valIndex{index: index, value: res}
 		}()
 	}
-	result := make([]K, 0, srcLength)
+	resultValIndex := make([]valIndex, 0, srcLength)
 	for i := 0; i < srcLength; i++ {
-		result = append(result, <-resultChan)
+		resultValIndex = append(resultValIndex, <-resultChan)
 	}
 
 	close(resultChan)
+	slices.SortFunc(resultValIndex, func(a, b valIndex) int {
+		return a.index - b.index
+	})
+
+	result := Transform(resultValIndex, func(val valIndex, _ int) K {
+		return val.value
+	})
+
 	return result
 }
