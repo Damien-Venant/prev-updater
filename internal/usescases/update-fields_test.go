@@ -181,3 +181,44 @@ func TestGetAllWorkItemsToUpdatePrev_ReturnZeroWorkItemWhenWorkItemVersionIsLowe
 	result := uc.getAllWorkItemsToUpdatePrev(builds, "25.5.5.5")
 	assert.Equal(t, 0, len(result))
 }
+
+func TestGetAllWorkItems_ReturnAllWorkItems(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := AdoUsesCases{Repository: mockRepo}
+
+	mockRepo.On("GetBuildWorkItem", mock.Anything, mock.Anything).Return([]model.BuildWorkItems{
+		{
+			Id:  "1",
+			Url: "url",
+		},
+		{
+			Id:  "2",
+			Url: "url",
+		},
+		{
+			Id:  "3",
+			Url: "url",
+		},
+	}, nil)
+
+	mockRepo.On("GetWorkItem", mock.Anything).Return(model.WorkItem{}, nil)
+
+	result, err := uc.getAllWorkItems([]model.PipelineRuns{{Id: 1}, {Id: 2}})
+
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+	assert.NotEmpty(t, result)
+}
+
+func TestGetAllWorkItems_ReturnErr(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := AdoUsesCases{Repository: mockRepo}
+
+	mockRepo.On("GetBuildWorkItem", mock.Anything, mock.Anything).Return([]model.BuildWorkItems{}, errors.New("error"))
+
+	result, err := uc.getAllWorkItems([]model.PipelineRuns{{Id: 1}, {Id: 2}})
+
+	assert.NotNil(t, err)
+	assert.NotNil(t, result)
+	assert.Empty(t, result)
+}
