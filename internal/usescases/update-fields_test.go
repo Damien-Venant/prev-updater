@@ -14,6 +14,10 @@ type MockRepository struct {
 	mock.Mock
 }
 
+type MockAdoUseCases struct {
+	mock.Mock
+}
+
 func (m *MockRepository) GetRepositoryById(repositoryId string) (*model.Repository, error) {
 	args := m.Called(repositoryId)
 	val := args.Get(0).(model.Repository)
@@ -66,6 +70,18 @@ func createPipelineRun(ref string, name string, id int) model.PipelineRuns {
 			},
 		},
 	}
+}
+
+func createWorkItem(id int, fields map[string]interface{}) model.WorkItem {
+	return model.WorkItem{
+		Id:     id,
+		Fields: fields,
+	}
+}
+
+func (m *MockAdoUseCases) updateFields(id string, value string, path string) error {
+	args := m.Called(id, value, path)
+	return args.Error(0)
 }
 
 func TestGetRunsToUpdate_TwoBuildsOnSameRef(t *testing.T) {
@@ -246,4 +262,57 @@ func TestGetAllWorkItems_ReturnErr(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.NotNil(t, result)
 	assert.Empty(t, result)
+}
+
+func TestUpdateAdoIntegrationBuild_WithEmptyVersion(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := AdoUsesCases{Repository: mockRepo}
+
+	version := "25.5.5.5"
+	workItems := []model.WorkItem{
+		createWorkItem(1, map[string]interface{}{AdoIntegrationBuildFieldName: ""}),
+	}
+
+	_ = mockRepo.On("UpdateWorkItemFields", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	err := uc.updateAdoIntegrationBuild(workItems, version)
+
+	assert.Nil(t, err)
+	mockRepo.AssertNotCalled(t, "UpdatetItemFields", mock.Anything, version, mock.Anything)
+}
+
+func TestUpdateAdoIntegrationBuild_WithNotEmptyVerison(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := AdoUsesCases{Repository: mockRepo}
+
+	version := "25.5.5.5"
+	result := "25.5.3.5 | 25.5.5.5"
+	workItems := []model.WorkItem{
+		createWorkItem(1, map[string]interface{}{AdoIntegrationBuildFieldName: "25.5.3.5"}),
+	}
+
+	_ = mockRepo.On("UpdateWorkItemFields", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	err := uc.updateAdoIntegrationBuild(workItems, version)
+
+	assert.Nil(t, err)
+	mockRepo.AssertNotCalled(t, "UpdatetItemFields", mock.Anything, result, mock.Anything)
+}
+
+func TestUpdateAdoIntegration_WithSomeVerion(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := AdoUsesCases{Repository: mockRepo}
+
+	version := "25.5.5.5"
+	result := "25.5.3.5 | 25.6.5.5 | 25.5.5.5"
+	workItems := []model.WorkItem{
+		createWorkItem(1, map[string]interface{}{AdoIntegrationBuildFieldName: "25.5.3.5 | 25.6.5.5"}),
+	}
+
+	_ = mockRepo.On("UpdateWorkItemFields", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	err := uc.updateAdoIntegrationBuild(workItems, version)
+
+	assert.Nil(t, err)
+	mockRepo.AssertNotCalled(t, "UpdatetItemFields", mock.Anything, result, mock.Anything)
 }
