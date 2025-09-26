@@ -74,8 +74,11 @@ func TestGetRunsToUpdate_TwoBuildsOnSameRef(t *testing.T) {
 
 	builds := []model.PipelineRuns{
 		createPipelineRun("refs/heads/feature-1", "", 1),
-		createPipelineRun("refs/heads/feature-1", "", 2),
-		createPipelineRun("refs/heads/main", "", 3),
+		createPipelineRun("refs/heads/main", "", 2),
+		createPipelineRun("refs/heads/feature-1", "", 3),
+		createPipelineRun("refs/heads/main", "", 4),
+		createPipelineRun("refs/heads/feature-1", "", 5),
+		createPipelineRun("refs/heads/feature-1", "", 6),
 	}
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
@@ -84,7 +87,7 @@ func TestGetRunsToUpdate_TwoBuildsOnSameRef(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, builds[0], result[0])
-	assert.Equal(t, builds[1], result[1])
+	assert.Equal(t, builds[2], result[1])
 }
 
 func TestGetRunsToUpdate_OnlyOneBuildOnRef(t *testing.T) {
@@ -95,6 +98,8 @@ func TestGetRunsToUpdate_OnlyOneBuildOnRef(t *testing.T) {
 		createPipelineRun("refs/heads/feature-1", "", 1), // only one on feature-1
 		createPipelineRun("refs/heads/main", "", 2),      // default branch
 		createPipelineRun("refs/heads/main", "", 3),
+		createPipelineRun("refs/heads/main", "", 4), // default branch
+		createPipelineRun("refs/heads/main", "", 5),
 	}
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
@@ -104,6 +109,26 @@ func TestGetRunsToUpdate_OnlyOneBuildOnRef(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, builds[0], result[0]) // Last on current ref
 	assert.Equal(t, builds[1], result[1]) // Last on default branch
+}
+
+func TestGetRunsToUpdate_DefaultBranch(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := &AdoUsesCases{Repository: mockRepo}
+
+	builds := []model.PipelineRuns{
+		createPipelineRun("refs/heads/main", "", 2),      // default branch
+		createPipelineRun("refs/heads/feature-1", "", 1), // only one on feature-1
+		createPipelineRun("refs/heads/main", "", 4),      // default branch
+		createPipelineRun("refs/heads/main", "", 5),
+	}
+
+	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
+
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123)
+
+	assert.NoError(t, err)
+	assert.Equal(t, builds[0], result[0]) // Last on default ref
+	assert.Equal(t, builds[2], result[1]) // Last on default branch
 }
 
 func TestGetRunsToUpdate_RepositoryError(t *testing.T) {
@@ -129,28 +154,28 @@ func TestGetAllWorkItemsToUpdatePrev_OnlyWorkItemWithUpperVersionThanBuild(t *te
 
 	builds := []model.WorkItem{
 		{
-			Id: "1",
+			Id: 1,
 			Fields: map[string]interface{}{
-				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.8.5",
+				"test": "25.5.8.5",
 			},
 		},
 		{
-			Id: "2",
+			Id: 2,
 			Fields: map[string]interface{}{
-				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.5.8",
+				"test": "25.5.5.8",
 			},
 		},
 		{
-			Id: "3",
+			Id: 3,
 			Fields: map[string]interface{}{
-				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.5.3",
+				"test": "25.5.5.3",
 			},
 		},
 	}
-	result := uc.getAllWorkItemsToUpdatePrev(builds, "25.5.5.5")
+	result := uc.getAllWorkItemsToUpdatePrev(builds, "25.5.5.5", "test")
 	assert.Equal(t, 2, len(result))
 	for _, res := range result {
-		assert.Contains(t, []string{"1", "2"}, res.Id)
+		assert.Contains(t, []int{1, 2}, res.Id)
 	}
 }
 
@@ -160,25 +185,25 @@ func TestGetAllWorkItemsToUpdatePrev_ReturnZeroWorkItemWhenWorkItemVersionIsLowe
 
 	builds := []model.WorkItem{
 		{
-			Id: "1",
+			Id: 1,
 			Fields: map[string]interface{}{
-				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.5",
+				"test": "25.5.4.5",
 			},
 		},
 		{
-			Id: "2",
+			Id: 2,
 			Fields: map[string]interface{}{
-				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.8",
+				"test": "25.5.4.8",
 			},
 		},
 		{
-			Id: "3",
+			Id: 3,
 			Fields: map[string]interface{}{
-				"Microsoft.VSTS.Build.IntegrationBuild": "25.5.4.3",
+				"test": "25.5.4.3",
 			},
 		},
 	}
-	result := uc.getAllWorkItemsToUpdatePrev(builds, "25.5.5.5")
+	result := uc.getAllWorkItemsToUpdatePrev(builds, "25.5.5.5", "test")
 	assert.Equal(t, 0, len(result))
 }
 

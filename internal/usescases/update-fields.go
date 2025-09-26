@@ -1,11 +1,17 @@
 package usescases
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/Damien-Venant/prev-updater/internal/model"
 	"github.com/Damien-Venant/prev-updater/pkg/queryslice"
 	"github.com/rs/zerolog"
+)
+
+const (
+	AdoIntegrationBuildFieldName string = "Microsoft.VSTS.Build.IntegrationBuild"
+	AdoIntegrationPath           string = "/fields/" + AdoIntegrationBuildFieldName
 )
 
 type AdoRepository interface {
@@ -29,47 +35,60 @@ func NewAdoUsesCases(adoRepository AdoRepository, logger *zerolog.Logger) *AdoUs
 	}
 }
 
-func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, fieldName string) error {
+func (u *AdoUsesCases) UpdateFieldsByPipelineId(pipelineId int) error {
+	return nil
+}
+
+func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, path string) error {
 	adoRep := u.Repository
-	u.Logger.Info().
-		Dict("metadata", zerolog.Dict().Int("pipeline-id", pipelineId)).
-		Msg("Start update fields by last runs")
 	result, err := adoRep.GetPipelineRuns(pipelineId)
 	if err != nil {
-		u.Logger.Error().
-			Err(err).
-			Stack().
-			Dict("metadata", zerolog.Dict().Int("pipeline-id", pipelineId)).
-			Send()
 		return err
 	} else if len(result) == 0 {
-		u.Logger.
-			Warn().Msg("GetPipelinesRuns return no data")
 		return nil
 	}
 
 	builds, err := u.getRunsToUpdate(result, repositoryId, pipelineId)
 	if err != nil {
-		u.Logger.Error().
-			Err(err).
-			Stack().
-			Dict("metadata", zerolog.Dict().Int("pipeline-id", pipelineId)).
-			Send()
 		return err
 	}
+	lastBuild := builds[0]
 
 	workItems, err := u.getAllWorkItems(builds)
 	if err != nil {
-		u.Logger.Error().
-			Err(err).
-			Stack().
-			Dict("metatdata", zerolog.Dict().Int("pipeline-id", pipelineId)).
-			Send()
 		return err
 	}
 
-	_ = u.getAllWorkItemsToUpdatePrev(workItems, builds[0].Name)
+	versionName := lastBuild.Name
+	workItemsToUpdatePrev := u.getAllWorkItemsToUpdatePrev(workItems, builds[0].Name, path)
 
+	fmt.Println(versionName)
+	fmt.Println(len(workItemsToUpdatePrev))
+
+	//if len(workItemsToUpdatePrev) > 0 {
+	//	var errMap error = nil
+	//	tabFieldName := strings.Split(path, "/")
+	//	fieldName := tabFieldName[len(tabFieldName)-1]
+	//	for _, workItem := range workItemsToUpdatePrev {
+	//		err = u.updateFields(workItem.Id, versionName, fieldName)
+	//		if err != nil {
+	//			errMap = errors.Join(errMap, err)
+	//		}
+	//	}
+	//	if errMap != nil {
+	//		return errMap
+	//	}
+	//}
+
+	//if len(workItems) > 0 {
+	//	var errMap error = nil
+	//	for _, workItem := range workItems {
+	//		err = u.updateFields(workItem.Id, versionName, AdoIntegrationPath)
+	//		if err != nil {
+	//			errMap = errors.Join(errMap, err)
+	//		}
+	//	}
+	//}
 	//for _, workItem := range workItems {
 	//	err = u.updateFields(workItem.Id, lastRuns.Name, fieldName)
 	//	if err != nil {
@@ -98,7 +117,7 @@ func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId
 	})
 
 	if len(buildsOnSameRef) > 1 {
-		return []model.PipelineRuns{builds[0], builds[1]}, nil
+		return []model.PipelineRuns{buildsOnSameRef[0], buildsOnSameRef[1]}, nil
 	}
 
 	lastBuildOnDefaultRefName := queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
@@ -126,9 +145,9 @@ func (u *AdoUsesCases) getAllWorkItems(builds []model.PipelineRuns) ([]model.Wor
 	return workItems, nil
 }
 
-func (u *AdoUsesCases) getAllWorkItemsToUpdatePrev(workItems []model.WorkItem, version string) []model.WorkItem {
+func (u *AdoUsesCases) getAllWorkItemsToUpdatePrev(workItems []model.WorkItem, version, fieldName string) []model.WorkItem {
 	workItems = queryslice.Filter(workItems, func(pre model.WorkItem) bool {
-		workItemVersion, _ := pre.Fields["Microsoft.VSTS.Build.IntegrationBuild"].(string)
+		workItemVersion, _ := pre.Fields[fieldName].(string)
 		if workItemVersion == "" {
 			return true
 		}
@@ -138,15 +157,15 @@ func (u *AdoUsesCases) getAllWorkItemsToUpdatePrev(workItems []model.WorkItem, v
 	return workItems
 }
 
-func (u *AdoUsesCases) UpdateFieldsByPipelineId(pipelineId int) error {
+func (u *AdoUsesCases) updateAdoIntegrationBuild(workitems []model.BuildWorkItems) error {
 	return nil
 }
 
-func (u *AdoUsesCases) updateFields(woritemId, name, fieldName string) error {
+func (u *AdoUsesCases) updateFields(woritemId, name, path string) error {
 	repo := u.Repository
 	modelToUpdload := model.OperationFields{
 		Op:    "add",
-		Path:  fieldName,
+		Path:  path,
 		Value: name,
 	}
 

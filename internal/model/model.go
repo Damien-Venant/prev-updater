@@ -31,7 +31,7 @@ type (
 		Url string `json:"url"`
 	}
 	WorkItem struct {
-		Id     string                 `json:"id"`
+		Id     int                    `json:"id"`
 		Fields map[string]interface{} `json:"fields"`
 	}
 
