@@ -2,6 +2,7 @@ package usescases
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/Damien-Venant/prev-updater/internal/model"
@@ -24,7 +25,9 @@ func (m *MockRepository) GetRepositoryById(repositoryId string) (*model.Reposito
 	return &val, args.Error(1)
 }
 func (m *MockRepository) GetPipelineRuns(pipelineId int) ([]model.PipelineRuns, error) {
-	return nil, nil
+	args := m.Called(pipelineId)
+	val := args.Get(0).([]model.PipelineRuns)
+	return val, args.Error(1)
 }
 func (m *MockRepository) GetPipelineRun(pipelineId, runId int) (*model.PipelineRuns, error) {
 	return nil, nil
@@ -35,8 +38,12 @@ func (m *MockRepository) GetBuildWorkItem(fromBuildId, toBuildId int) ([]model.B
 	return val, args.Error(1)
 }
 func (m *MockRepository) GetWorkItem(workItemId string) (*model.WorkItem, error) {
+	var val model.WorkItem
 	args := m.Called(workItemId)
-	val := args.Get(0).(model.WorkItem)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	val, _ = args.Get(0).(model.WorkItem)
 	return &val, args.Error(1)
 }
 func (m *MockRepository) UpdateWorkitemField(workItemId string, operation model.OperationFields) error {
@@ -333,4 +340,147 @@ func TestUpdateAdoIntegration_AlreadyContainsVersion_ShouldNotAddIt(t *testing.T
 
 	assert.Nil(t, err)
 	mockRepo.AssertNotCalled(t, "UpdatetItemFields", mock.Anything, result, mock.Anything)
+}
+
+func TestUpdateFieldsByLastRuns_WhenPipelineRunIsEmpty(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := AdoUsesCases{Repository: mockRepo}
+
+	mockRepo.On("GetPipelineRuns", mock.Anything).Return([]model.PipelineRuns{}, nil)
+
+	err := uc.UpdateFieldsByLastRuns(862, "62", "CustomPath")
+
+	assert.Nil(t, err)
+}
+
+func TestUpdateFieldsByLastRuns_WhenPipelineRunReturnAnError(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := AdoUsesCases{Repository: mockRepo}
+
+	mockRepo.On("GetPipelineRuns", mock.Anything).Return([]model.PipelineRuns{}, errors.New("err"))
+
+	err := uc.UpdateFieldsByLastRuns(862, "62", "CustomPath")
+
+	assert.NotNil(t, err)
+	assert.Equal(t, "err", err.Error())
+}
+
+func TestUpdateFieldsByLastRuns(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := AdoUsesCases{Repository: mockRepo}
+
+	pipelineRuns := []model.PipelineRuns{
+		createPipelineRun("main", "25.6.5.0", 4),
+		createPipelineRun("main", "25.6.5.1", 3),
+		createPipelineRun("main", "25.6.5.2", 2),
+		createPipelineRun("main", "25.6.5.3", 1),
+	}
+	buildWorkItems := []model.BuildWorkItems{
+		{Id: "1"}, {Id: "2"}, {Id: "3"}, {Id: "4"},
+	}
+	workItems := []model.WorkItem{
+		createWorkItem(1, map[string]interface{}{"Custom": ""}),
+		createWorkItem(2, map[string]interface{}{"Custom": ""}),
+		createWorkItem(3, map[string]interface{}{"Custom": ""}),
+		createWorkItem(4, map[string]interface{}{"Custom": ""}),
+	}
+	mockRepo.On("GetPipelineRuns", mock.Anything).Return(pipelineRuns, nil)
+	mockRepo.On("GetRepositoryById", mock.Anything).Return(model.Repository{Id: "1", DefaultBranch: "main", Url: ""}, nil)
+	mockRepo.On("GetBuildWorkItem", 3, 4).Return(buildWorkItems, nil)
+	for _, workItem := range workItems {
+		mockRepo.On("GetWorkItem", fmt.Sprintf("%d", workItem.Id)).Return(workItem, nil)
+	}
+	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
+
+	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+
+	assert.Nil(t, err)
+}
+
+func TestUpdateFieldsByLastRuns_ShouldReturnError_OnPipelineRuns(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := AdoUsesCases{Repository: mockRepo}
+
+	pipelineRuns := []model.PipelineRuns{
+		createPipelineRun("main", "25.6.5.0", 4),
+		createPipelineRun("main", "25.6.5.1", 3),
+		createPipelineRun("main", "25.6.5.2", 2),
+		createPipelineRun("main", "25.6.5.3", 1),
+	}
+	buildWorkItems := []model.BuildWorkItems{
+		{Id: "1"}, {Id: "2"}, {Id: "3"}, {Id: "4"},
+	}
+	workItems := []model.WorkItem{
+		createWorkItem(1, map[string]interface{}{"Custom": ""}),
+		createWorkItem(2, map[string]interface{}{"Custom": ""}),
+		createWorkItem(3, map[string]interface{}{"Custom": ""}),
+		createWorkItem(4, map[string]interface{}{"Custom": ""}),
+	}
+	mockRepo.On("GetPipelineRuns", mock.Anything).Return(pipelineRuns, errors.New("error"))
+	mockRepo.On("GetRepositoryById", mock.Anything).Return(model.Repository{Id: "1", DefaultBranch: "main", Url: ""}, nil)
+	mockRepo.On("GetBuildWorkItem", 3, 4).Return(buildWorkItems, nil)
+	for _, workItem := range workItems {
+		mockRepo.On("GetWorkItem", fmt.Sprintf("%d", workItem.Id)).Return(workItem, nil)
+	}
+	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
+
+	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+
+	assert.NotNil(t, err)
+	assert.Equal(t, "error", err.Error())
+}
+func TestUpdateFieldsByLastRuns_ShouldReturnError_OnRepositoryId(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := AdoUsesCases{Repository: mockRepo}
+
+	pipelineRuns := []model.PipelineRuns{
+		createPipelineRun("main", "25.6.5.0", 4),
+		createPipelineRun("main", "25.6.5.1", 3),
+		createPipelineRun("main", "25.6.5.2", 2),
+		createPipelineRun("main", "25.6.5.3", 1),
+	}
+	buildWorkItems := []model.BuildWorkItems{
+		{Id: "1"}, {Id: "2"}, {Id: "3"}, {Id: "4"},
+	}
+	workItems := []model.WorkItem{
+		createWorkItem(1, map[string]interface{}{"Custom": ""}),
+		createWorkItem(2, map[string]interface{}{"Custom": ""}),
+		createWorkItem(3, map[string]interface{}{"Custom": ""}),
+		createWorkItem(4, map[string]interface{}{"Custom": ""}),
+	}
+	mockRepo.On("GetPipelineRuns", mock.Anything).Return(pipelineRuns, nil)
+	mockRepo.On("GetRepositoryById", mock.Anything).Return(model.Repository{Id: "1", DefaultBranch: "main", Url: ""}, errors.New("error"))
+	mockRepo.On("GetBuildWorkItem", 3, 4).Return(buildWorkItems, nil)
+	for _, workItem := range workItems {
+		mockRepo.On("GetWorkItem", fmt.Sprintf("%d", workItem.Id)).Return(workItem, nil)
+	}
+	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
+
+	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+
+	assert.NotNil(t, err)
+	assert.Equal(t, "error", err.Error())
+}
+func TestUpdateFieldsByLastRuns_ShouldReturnError_OnBuildWorkItem(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := AdoUsesCases{Repository: mockRepo}
+
+	pipelineRuns := []model.PipelineRuns{
+		createPipelineRun("main", "25.6.5.0", 4),
+		createPipelineRun("main", "25.6.5.1", 3),
+		createPipelineRun("main", "25.6.5.2", 2),
+		createPipelineRun("main", "25.6.5.3", 1),
+	}
+	buildWorkItems := []model.BuildWorkItems{
+		{Id: "1"}, {Id: "2"}, {Id: "3"}, {Id: "4"},
+	}
+	mockRepo.On("GetPipelineRuns", mock.Anything).Return(pipelineRuns, nil)
+	mockRepo.On("GetRepositoryById", mock.Anything).Return(model.Repository{Id: "1", DefaultBranch: "main", Url: ""}, nil)
+	mockRepo.On("GetBuildWorkItem", 3, 4).Return(buildWorkItems, errors.New("error"))
+	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
+
+	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+
+	assert.NotNil(t, err)
+	assert.Equal(t, "error", err.Error())
 }
