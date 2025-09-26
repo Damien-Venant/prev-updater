@@ -30,10 +30,6 @@ type (
 		Id  string `json:"id"`
 		Url string `json:"url"`
 	}
-	WorkItem struct {
-		Id     int                    `json:"id"`
-		Fields map[string]interface{} `json:"fields"`
-	}
 
 	OperationFields struct {
 		Op    string `json:"op"`
