@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/Damien-Venant/prev-updater/internal/model"
-	httpClient "github.com/Damien-Venant/prev-updater/pkg/http-client"
+	httpclient "github.com/Damien-Venant/prev-updater/pkg/http-client"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	NotFoundError       error = errors.New("Resource not found")
+	NotFoundError       error = errors.New("Ressource not found")
 	InternalServerError error = errors.New("Internal server error")
 	BadRequestError     error = errors.New("Bad request error")
 	IdkError            error = errors.New("IDK what's happened")
@@ -32,11 +32,11 @@ var mappingError map[int]error = map[int]error{
 }
 
 type AzureDevOpsRepository struct {
-	client  *httpClient.HttpClient
+	client  *httpclient.HttpClient
 	version string
 }
 
-func New(client *httpClient.HttpClient) *AzureDevOpsRepository {
+func New(client *httpclient.HttpClient) *AzureDevOpsRepository {
 	return &AzureDevOpsRepository{
 		client:  client,
 		version: apiVersion,
@@ -134,9 +134,9 @@ func (r *AzureDevOpsRepository) GetBuildWorkItem(fromBuildId, toBuildId int) ([]
 	return workItem.Value, nil
 }
 
-func (r *AzureDevOpsRepository) GetWorkItem(workItemId string) (*model.WorkItem, error) {
-	var buildWorkItems model.WorkItem
-	url := r.configureRouteWithVersion("wit/workItems/%s", workItemId)
+func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) (*model.BuildWorkItems, error) {
+	var buildWorkItems model.BuildWorkItems
+	url := r.configureRouteWithVersion("wit/workItems/%d", workItemId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return nil, err
