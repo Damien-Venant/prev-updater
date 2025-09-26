@@ -62,43 +62,26 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, path
 	}
 
 	versionName := lastBuild.Name
-	workItemsToUpdatePrev := u.getAllWorkItemsToUpdatePrev(workItems, builds[0].Name, path)
+	tabFieldName := strings.Split(path, "/")
+	fieldName := tabFieldName[len(tabFieldName)-1]
+	workItemsToUpdatePrev := u.getAllWorkItemsToUpdatePrev(workItems, builds[0].Name, fieldName)
 
-	fmt.Println(versionName)
-	fmt.Println(len(workItemsToUpdatePrev))
+	if len(workItemsToUpdatePrev) > 0 {
+		var errMap error = nil
+		for _, workItem := range workItemsToUpdatePrev {
+			err = u.updateFields(strconv.FormatInt(int64(workItem.Id), 10), versionName, path)
+			if err != nil {
+				errMap = errors.Join(errMap, err)
+			}
+		}
+		if errMap != nil {
+			return errMap
+		}
+	}
 
-	//if len(workItemsToUpdatePrev) > 0 {
-	//	var errMap error = nil
-	//	tabFieldName := strings.Split(path, "/")
-	//	fieldName := tabFieldName[len(tabFieldName)-1]
-	//	for _, workItem := range workItemsToUpdatePrev {
-	//		err = u.updateFields(workItem.Id, versionName, fieldName)
-	//		if err != nil {
-	//			errMap = errors.Join(errMap, err)
-	//		}
-	//	}
-	//	if errMap != nil {
-	//		return errMap
-	//	}
-	//}
-
-	//if len(workItems) > 0 {
-	//	var errMap error = nil
-	//	for _, workItem := range workItems {
-	//		err = u.updateFields(workItem.Id, versionName, AdoIntegrationPath)
-	//		if err != nil {
-	//			errMap = errors.Join(errMap, err)
-	//		}
-	//	}
-	//}
-	//for _, workItem := range workItems {
-	//	err = u.updateFields(workItem.Id, lastRuns.Name, fieldName)
-	//	if err != nil {
-	//		u.Logger.Err(err).Dict("pipeline-id",
-	//			zerolog.Dict().Int("pipeline-id", pipelineId)).
-	//			Send()
-	//	}
-	//}
+	if len(workItems) > 0 {
+		u.updateAdoIntegrationBuild(workItems, versionName)
+	}
 	return nil
 }
 
@@ -164,7 +147,7 @@ func (u *AdoUsesCases) updateAdoIntegrationBuild(workItems []model.WorkItem, ver
 	for _, workItem := range workItems {
 		var concatenateVersion string
 		val, _ := workItem.Fields[AdoIntegrationBuildFieldName].(string)
-		if val != "" {
+		if val != "" && !strings.Contains(val, version) {
 			concatenateVersion = fmt.Sprintf("%s | %s", val, version)
 		} else {
 			concatenateVersion = version
