@@ -1,7 +1,9 @@
 package usescases
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Damien-Venant/prev-updater/internal/model"
@@ -157,8 +159,21 @@ func (u *AdoUsesCases) getAllWorkItemsToUpdatePrev(workItems []model.WorkItem, v
 	return workItems
 }
 
-func (u *AdoUsesCases) updateAdoIntegrationBuild(workitems []model.BuildWorkItems) error {
-	return nil
+func (u *AdoUsesCases) updateAdoIntegrationBuild(workItems []model.WorkItem, version string) error {
+	var errMap error = nil
+	for _, workItem := range workItems {
+		var concatenateVersion string
+		val, _ := workItem.Fields[AdoIntegrationBuildFieldName].(string)
+		if val != "" {
+			concatenateVersion = fmt.Sprintf("%s | %s", val, version)
+		} else {
+			concatenateVersion = version
+		}
+		if err := u.updateFields(strconv.FormatInt(int64(workItem.Id), 10), concatenateVersion, AdoIntegrationPath); err != nil {
+			errMap = errors.Join(errMap)
+		}
+	}
+	return errMap
 }
 
 func (u *AdoUsesCases) updateFields(woritemId, name, path string) error {
