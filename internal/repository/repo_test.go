@@ -91,7 +91,7 @@ func TestErrorCodeMapping(t *testing.T) {
 	}
 }
 
-func TestErrorCodeMappingErrorUnknow(t *testing.T) {
+func TestErrorCodeMappingErrorUnknown(t *testing.T) {
 	test := struct {
 		ErrorCode      int
 		ExpectedResult error
