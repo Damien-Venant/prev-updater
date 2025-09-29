@@ -153,6 +153,45 @@ func TestGetRunsToUpdate_DefaultBranch(t *testing.T) {
 	assert.Equal(t, builds[0], result[0]) // Last on default ref
 	assert.Equal(t, builds[2], result[1]) // Last on default branch
 }
+func TestGetRunsToUpdate_SpecificBranchName(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := &AdoUsesCases{Repository: mockRepo}
+
+	builds := []model.PipelineRuns{
+		createPipelineRun("refs/heads/main", "", 1),      // default branch
+		createPipelineRun("refs/heads/feature-1", "", 2), // only one on feature-1
+		createPipelineRun("refs/heads/feature-1", "", 3), // only one on feature-1
+		createPipelineRun("refs/heads/main", "", 4),      // default branch
+		createPipelineRun("refs/heads/main", "", 5),
+	}
+
+	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
+
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "feature-1")
+
+	assert.NoError(t, err)
+	assert.Equal(t, builds[1], result[0]) // Last on default ref
+	assert.Equal(t, builds[2], result[1]) // Last on default branch
+}
+func TestGetRunsToUpdate_SpecificBranchNameWithOneRun(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := &AdoUsesCases{Repository: mockRepo}
+
+	builds := []model.PipelineRuns{
+		createPipelineRun("refs/heads/main", "", 1),      // default branch
+		createPipelineRun("refs/heads/feature-1", "", 2), // only one on feature-1
+		createPipelineRun("refs/heads/main", "", 3),      // default branch
+		createPipelineRun("refs/heads/main", "", 4),
+	}
+
+	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
+
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "feature-1")
+
+	assert.NoError(t, err)
+	assert.Equal(t, builds[1], result[0]) // Last on default ref
+	assert.Equal(t, builds[2], result[1]) // Last on default branch
+}
 
 func TestGetRunsToUpdate_RepositoryError(t *testing.T) {
 	mockRepo := new(MockRepository)
