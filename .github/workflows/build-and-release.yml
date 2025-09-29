@@ -24,6 +24,10 @@ jobs:
         
     - name: Test
       run: go test -v ./...
+
+    - name: Code Coverage
+      if: matrix.os == 'ubuntu'
+      run: go test -coverprofile=coverage.txt
       
     - name: Build (linux)
       if: matrix.os == 'ubuntu'
@@ -32,6 +36,12 @@ jobs:
     - name: Build (windows)
       if: matrix.os == 'windows'
       run: go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o ./bin/prev-updater-${{ matrix.os }}.exe .\cmd\main.go
+      
+    - name: Upload coverage reports to Codecov
+      if: matrix.os == 'ubuntu'
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Publish artifact
       uses: actions/upload-artifact@v4.6.2
