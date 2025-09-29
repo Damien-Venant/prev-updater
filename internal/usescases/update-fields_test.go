@@ -106,7 +106,7 @@ func TestGetRunsToUpdate_TwoBuildsOnSameRef(t *testing.T) {
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
 
-	result, err := uc.getRunsToUpdate(builds, "repo-id", 123)
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "")
 
 	assert.NoError(t, err)
 	assert.Equal(t, builds[0], result[0])
@@ -127,7 +127,7 @@ func TestGetRunsToUpdate_OnlyOneBuildOnRef(t *testing.T) {
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
 
-	result, err := uc.getRunsToUpdate(builds, "repo-id", 123)
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "")
 
 	assert.NoError(t, err)
 	assert.Equal(t, builds[0], result[0]) // Last on current ref
@@ -147,7 +147,7 @@ func TestGetRunsToUpdate_DefaultBranch(t *testing.T) {
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
 
-	result, err := uc.getRunsToUpdate(builds, "repo-id", 123)
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "")
 
 	assert.NoError(t, err)
 	assert.Equal(t, builds[0], result[0]) // Last on default ref
@@ -165,7 +165,7 @@ func TestGetRunsToUpdate_RepositoryError(t *testing.T) {
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{}, errors.New("db error"))
 
-	result, err := uc.getRunsToUpdate(builds, "repo-id", 123)
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "")
 
 	assert.Error(t, err)
 	assert.Nil(t, result)

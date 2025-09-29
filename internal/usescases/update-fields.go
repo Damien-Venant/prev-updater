@@ -58,7 +58,7 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(param UpdateFieldsParams) error {
 		return nil
 	}
 
-	builds, err := u.getRunsToUpdate(result, param.RepositoryId, param.PipelineId)
+	builds, err := u.getRunsToUpdate(result, param.RepositoryId, param.PipelineId, param.BranchName)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,8 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(param UpdateFieldsParams) error {
 // getRunsToUpdate is used to return last build and N-1 last build
 // It's return a array where the first index is last build and second index is N-1 last build
 // If the build have not previous build the N-1 last build is last build on defaultBranch
-func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId string, pipelineId int) ([]model.PipelineRuns, error) {
+func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId string, pipelineId int, branchName string) ([]model.PipelineRuns, error) {
+	var lastBuild model.PipelineRuns
 	adoRep := u.Repository
 	defaultRefName, err := adoRep.GetRepositoryById(repositoryId)
 	if err != nil {
@@ -105,8 +106,19 @@ func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId
 	builds = queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
 		return pre.State == "completed"
 	})
+	if branchName == "" {
+		lastBuild = builds[0]
+	} else {
+		index := queryslice.FindIndex(builds, func(pre model.PipelineRuns) bool {
+			return strings.Contains(pre.Resources.Repositories.Self.RefName, branchName)
+		})
+		if index < 0 {
+			return []model.PipelineRuns{}, ErrBranchNameNotExist
+		}
+		lastBuild = builds[index]
+	}
 	buildsOnSameRef := queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
-		return pre.Resources.Repositories.Self.RefName == builds[0].Resources.Repositories.Self.RefName
+		return pre.Resources.Repositories.Self.RefName == lastBuild.Resources.Repositories.Self.RefName
 	})
 
 	if len(buildsOnSameRef) > 1 {
