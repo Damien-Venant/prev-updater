@@ -23,8 +23,9 @@ var (
 	project      string = ""
 	versionTool  string = "debug_X.X.X"
 	pipelineId   int32
-	repositoryId string
-	fieldName    string
+	repositoryId string = ""
+	fieldName    string = ""
+	branchName   string = ""
 
 	logger *zerolog.Logger = nil
 )
@@ -57,6 +58,7 @@ func init() {
 	launchCommand.Flags().StringVarP(&project, "project", "p", "", "project name")
 	launchCommand.Flags().StringVarP(&repositoryId, "repository", "r", "", "set repository id")
 	launchCommand.Flags().StringVarP(&fieldName, "field", "f", "", "set field name")
+	launchCommand.Flags().StringVarP(&branchName, "branch-name", "", "", "set branch name")
 
 	launchCommand.MarkFlagRequired("token")
 	launchCommand.MarkFlagRequired("organisation")
@@ -105,16 +107,22 @@ func funcStartBatching(cmd *cobra.Command, args []string) {
 
 	use := usescases.NewAdoUsesCases(repo, logger)
 
-	if err := use.UpdateFieldsByLastRuns(int(pipelineId), repositoryId, fieldName); err != nil {
-		logger.
+	if err := use.UpdateFieldsByLastRuns(usescases.UpdateFieldsParams{
+		PipelineId:   int(pipelineId),
+		RepositoryId: repositoryId,
+		BranchName:   branchName,
+		FieldName:    fieldName,
+	}); err != nil {
+		logger.Error().
 			Err(err).
-			Send()
+			Stack().
+			Dict("metadata", zerolog.Dict().Int("pipeline-id", int(pipelineId))).
+			Msg("UpdateFields")
 		os.Exit(exitWithError())
 	}
 }
 
 func exitWithError() int {
 	infra.CloseLogFile()
-
 	return EXIT_FAILURE
 }

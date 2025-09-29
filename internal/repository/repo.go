@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/Damien-Venant/prev-updater/internal/model"
-	httpclient "github.com/Damien-Venant/prev-updater/pkg/http-client"
+	httpClient "github.com/Damien-Venant/prev-updater/pkg/http-client"
 )
 
 const (
@@ -19,24 +19,24 @@ const (
 )
 
 var (
-	NotFoundError       error = errors.New("Ressource not found")
-	InternalServerError error = errors.New("Internal server error")
-	BadRequestError     error = errors.New("Bad request error")
-	IdkError            error = errors.New("IDK what's happened")
+	ErrNotFound       error = errors.New("resource not found")
+	ErrInternalServer error = errors.New("internal server error")
+	ErrBadRequest     error = errors.New("bad request error")
+	ErrIdk            error = errors.New("idk what's happened")
 )
 
 var mappingError map[int]error = map[int]error{
-	http.StatusBadRequest:          BadRequestError,
-	http.StatusInternalServerError: InternalServerError,
-	http.StatusNotFound:            NotFoundError,
+	http.StatusBadRequest:          ErrBadRequest,
+	http.StatusInternalServerError: ErrInternalServer,
+	http.StatusNotFound:            ErrNotFound,
 }
 
 type AzureDevOpsRepository struct {
-	client  *httpclient.HttpClient
+	client  *httpClient.HttpClient
 	version string
 }
 
-func New(client *httpclient.HttpClient) *AzureDevOpsRepository {
+func New(client *httpClient.HttpClient) *AzureDevOpsRepository {
 	return &AzureDevOpsRepository{
 		client:  client,
 		version: apiVersion,
@@ -134,9 +134,9 @@ func (r *AzureDevOpsRepository) GetBuildWorkItem(fromBuildId, toBuildId int) ([]
 	return workItem.Value, nil
 }
 
-func (r *AzureDevOpsRepository) GetWorkitem(workItemId int) (*model.BuildWorkItems, error) {
-	var buildWorkItems model.BuildWorkItems
-	url := r.configureRouteWithVersion("wit/workItems/%d", workItemId)
+func (r *AzureDevOpsRepository) GetWorkItem(workItemId string) (*model.WorkItem, error) {
+	var buildWorkItems model.WorkItem
+	url := r.configureRouteWithVersion("wit/workItems/%s", workItemId)
 	httpResponse, err := r.client.Get(url, nil)
 	if err != nil {
 		return nil, err
@@ -209,7 +209,7 @@ func readAndUnmarshal[T any](body io.Reader, model *T) error {
 
 func errorCodeMapping(errorCode int) error {
 	if err, ok := mappingError[errorCode]; !ok {
-		return IdkError
+		return ErrIdk
 	} else {
 		return err
 	}
