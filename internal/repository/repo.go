@@ -19,10 +19,10 @@ const (
 )
 
 var (
-	ErrNotFound       error = errors.New("Resource not found")
-	ErrInternalServer error = errors.New("Internal server error")
-	ErrBadRequest     error = errors.New("Bad request error")
-	ErrIdk            error = errors.New("IDK what's happened")
+	ErrNotFound       error = errors.New("resource not found")
+	ErrInternalServer error = errors.New("internal server error")
+	ErrBadRequest     error = errors.New("bad request error")
+	ErrIdk            error = errors.New("idk what's happened")
 )
 
 var mappingError map[int]error = map[int]error{
