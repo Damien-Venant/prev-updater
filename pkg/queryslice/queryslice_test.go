@@ -138,3 +138,35 @@ func TestQuerySliceTransformParallel(t *testing.T) {
 		})
 	}
 }
+
+func TestQuerySliceFindIndex(t *testing.T) {
+	tests := []struct {
+		name      string
+		findValue int
+		values    []int
+		result    int
+	}{
+		{
+			name:      "ElementExist_ShouldReturnIndex",
+			findValue: 5,
+			values:    []int{50, 5, 3, 05, 423},
+			result:    1,
+		},
+		{
+			name:      "ElementDoesntExist_ShouldReturnMinusOne",
+			findValue: 10, //This values doesn't exist
+			values:    []int{50, 5, 3, 05, 423},
+			result:    -1,
+		},
+	}
+
+	for _, test := range tests {
+		testName := fmt.Sprintf("TestQuerySliceFindIndex_%s", test.name)
+		t.Run(testName, func(t *testing.T) {
+			index := FindIndex(test.values, func(pre int) bool {
+				return pre == test.findValue
+			})
+			assert.Equal(t, test.result, index)
+		})
+	}
+}

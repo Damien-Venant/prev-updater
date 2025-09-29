@@ -19,16 +19,16 @@ const (
 )
 
 var (
-	NotFoundError       error = errors.New("Resource not found")
-	InternalServerError error = errors.New("Internal server error")
-	BadRequestError     error = errors.New("Bad request error")
-	IdkError            error = errors.New("IDK what's happened")
+	ErrNotFound       error = errors.New("resource not found")
+	ErrInternalServer error = errors.New("internal server error")
+	ErrBadRequest     error = errors.New("bad request error")
+	ErrIdk            error = errors.New("idk what's happened")
 )
 
 var mappingError map[int]error = map[int]error{
-	http.StatusBadRequest:          BadRequestError,
-	http.StatusInternalServerError: InternalServerError,
-	http.StatusNotFound:            NotFoundError,
+	http.StatusBadRequest:          ErrBadRequest,
+	http.StatusInternalServerError: ErrInternalServer,
+	http.StatusNotFound:            ErrNotFound,
 }
 
 type AzureDevOpsRepository struct {
@@ -209,7 +209,7 @@ func readAndUnmarshal[T any](body io.Reader, model *T) error {
 
 func errorCodeMapping(errorCode int) error {
 	if err, ok := mappingError[errorCode]; !ok {
-		return IdkError
+		return ErrIdk
 	} else {
 		return err
 	}

@@ -106,7 +106,7 @@ func TestGetRunsToUpdate_TwoBuildsOnSameRef(t *testing.T) {
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
 
-	result, err := uc.getRunsToUpdate(builds, "repo-id", 123)
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "")
 
 	assert.NoError(t, err)
 	assert.Equal(t, builds[0], result[0])
@@ -127,7 +127,7 @@ func TestGetRunsToUpdate_OnlyOneBuildOnRef(t *testing.T) {
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
 
-	result, err := uc.getRunsToUpdate(builds, "repo-id", 123)
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "")
 
 	assert.NoError(t, err)
 	assert.Equal(t, builds[0], result[0]) // Last on current ref
@@ -147,10 +147,49 @@ func TestGetRunsToUpdate_DefaultBranch(t *testing.T) {
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
 
-	result, err := uc.getRunsToUpdate(builds, "repo-id", 123)
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "")
 
 	assert.NoError(t, err)
 	assert.Equal(t, builds[0], result[0]) // Last on default ref
+	assert.Equal(t, builds[2], result[1]) // Last on default branch
+}
+func TestGetRunsToUpdate_SpecificBranchName(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := &AdoUsesCases{Repository: mockRepo}
+
+	builds := []model.PipelineRuns{
+		createPipelineRun("refs/heads/main", "", 1),      // default branch
+		createPipelineRun("refs/heads/feature-1", "", 2), // only one on feature-1
+		createPipelineRun("refs/heads/feature-1", "", 3), // only one on feature-1
+		createPipelineRun("refs/heads/main", "", 4),      // default branch
+		createPipelineRun("refs/heads/main", "", 5),
+	}
+
+	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
+
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "feature-1")
+
+	assert.NoError(t, err)
+	assert.Equal(t, builds[1], result[0]) // Last on default ref
+	assert.Equal(t, builds[2], result[1]) // Last on default branch
+}
+func TestGetRunsToUpdate_SpecificBranchNameWithOneRun(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := &AdoUsesCases{Repository: mockRepo}
+
+	builds := []model.PipelineRuns{
+		createPipelineRun("refs/heads/main", "", 1),      // default branch
+		createPipelineRun("refs/heads/feature-1", "", 2), // only one on feature-1
+		createPipelineRun("refs/heads/main", "", 3),      // default branch
+		createPipelineRun("refs/heads/main", "", 4),
+	}
+
+	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{DefaultBranch: "refs/heads/main"}, nil)
+
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "feature-1")
+
+	assert.NoError(t, err)
+	assert.Equal(t, builds[1], result[0]) // Last on default ref
 	assert.Equal(t, builds[2], result[1]) // Last on default branch
 }
 
@@ -165,7 +204,7 @@ func TestGetRunsToUpdate_RepositoryError(t *testing.T) {
 
 	mockRepo.On("GetRepositoryById", "repo-id").Return(model.Repository{}, errors.New("db error"))
 
-	result, err := uc.getRunsToUpdate(builds, "repo-id", 123)
+	result, err := uc.getRunsToUpdate(builds, "repo-id", 123, "")
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
@@ -348,7 +387,11 @@ func TestUpdateFieldsByLastRuns_WhenPipelineRunIsEmpty(t *testing.T) {
 
 	mockRepo.On("GetPipelineRuns", mock.Anything).Return([]model.PipelineRuns{}, nil)
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "CustomPath")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.Nil(t, err)
 }
@@ -359,7 +402,11 @@ func TestUpdateFieldsByLastRuns_WhenPipelineRunReturnAnError(t *testing.T) {
 
 	mockRepo.On("GetPipelineRuns", mock.Anything).Return([]model.PipelineRuns{}, errors.New("err"))
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "CustomPath")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "err", err.Error())
@@ -392,7 +439,11 @@ func TestUpdateFieldsByLastRuns(t *testing.T) {
 	}
 	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.Nil(t, err)
 }
@@ -424,7 +475,11 @@ func TestUpdateFieldsByLastRuns_ShouldReturnError_OnPipelineRuns(t *testing.T) {
 	}
 	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "error", err.Error())
@@ -456,7 +511,11 @@ func TestUpdateFieldsByLastRuns_ShouldReturnError_OnRepositoryId(t *testing.T) {
 	}
 	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "error", err.Error())
@@ -479,7 +538,11 @@ func TestUpdateFieldsByLastRuns_ShouldReturnError_OnBuildWorkItem(t *testing.T) 
 	mockRepo.On("GetBuildWorkItem", 3, 4).Return(buildWorkItems, errors.New("error"))
 	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "error", err.Error())

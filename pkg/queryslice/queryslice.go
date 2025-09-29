@@ -57,3 +57,12 @@ func TransformParallel[T any, K any](source []T, transFunc Trans[T, K]) []K {
 
 	return result
 }
+
+func FindIndex[T any](source []T, filterFunc Predicate[T]) int {
+	for index, val := range source {
+		if filterFunc(val) {
+			return index
+		}
+	}
+	return -1
+}

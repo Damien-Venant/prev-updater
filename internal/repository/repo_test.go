@@ -68,17 +68,17 @@ func TestErrorCodeMapping(t *testing.T) {
 		{
 			Name:           "InternalServerError",
 			ErrorCode:      http.StatusInternalServerError,
-			ExpectedResult: InternalServerError,
+			ExpectedResult: ErrInternalServer,
 		},
 		{
 			Name:           "BadRequestError",
 			ErrorCode:      http.StatusBadRequest,
-			ExpectedResult: BadRequestError,
+			ExpectedResult: ErrBadRequest,
 		},
 		{
 			Name:           "NotFoundError",
 			ErrorCode:      http.StatusNotFound,
-			ExpectedResult: NotFoundError,
+			ExpectedResult: ErrNotFound,
 		},
 	}
 
@@ -97,7 +97,7 @@ func TestErrorCodeMappingErrorUnknown(t *testing.T) {
 		ExpectedResult error
 	}{
 		ErrorCode:      http.StatusBadGateway,
-		ExpectedResult: IdkError,
+		ExpectedResult: ErrIdk,
 	}
 
 	err := errorCodeMapping(test.ErrorCode)

@@ -30,6 +30,13 @@ type AdoUsesCases struct {
 	Logger     *zerolog.Logger
 }
 
+type UpdateFieldsParams struct {
+	PipelineId   int
+	RepositoryId string
+	FieldName    string
+	BranchName   string
+}
+
 func NewAdoUsesCases(adoRepository AdoRepository, logger *zerolog.Logger) *AdoUsesCases {
 	return &AdoUsesCases{
 		Repository: adoRepository,
@@ -41,16 +48,16 @@ func (u *AdoUsesCases) UpdateFieldsByPipelineId(pipelineId int) error {
 	return nil
 }
 
-func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, path string) error {
+func (u *AdoUsesCases) UpdateFieldsByLastRuns(param UpdateFieldsParams) error {
 	adoRep := u.Repository
-	result, err := adoRep.GetPipelineRuns(pipelineId)
+	result, err := adoRep.GetPipelineRuns(param.PipelineId)
 	if err != nil {
 		return err
 	} else if len(result) == 0 {
 		return nil
 	}
 
-	builds, err := u.getRunsToUpdate(result, repositoryId, pipelineId)
+	builds, err := u.getRunsToUpdate(result, param.RepositoryId, param.PipelineId, param.BranchName)
 	if err != nil {
 		return err
 	}
@@ -62,14 +69,14 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, path
 	}
 
 	versionName := lastBuild.Name
-	tabFieldName := strings.Split(path, "/")
+	tabFieldName := strings.Split(param.FieldName, "/")
 	fieldName := tabFieldName[len(tabFieldName)-1]
 	workItemsToUpdatePrev := u.getAllWorkItemsToUpdatePrev(workItems, builds[0].Name, fieldName)
 
 	if len(workItemsToUpdatePrev) > 0 {
 		var errMap error = nil
 		for _, workItem := range workItemsToUpdatePrev {
-			err = u.updateFields(strconv.FormatInt(int64(workItem.Id), 10), versionName, path)
+			err = u.updateFields(strconv.FormatInt(int64(workItem.Id), 10), versionName, param.FieldName)
 			if err != nil {
 				errMap = errors.Join(errMap, err)
 			}
@@ -88,7 +95,8 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, path
 // getRunsToUpdate is used to return last build and N-1 last build
 // It's return a array where the first index is last build and second index is N-1 last build
 // If the build have not previous build the N-1 last build is last build on defaultBranch
-func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId string, pipelineId int) ([]model.PipelineRuns, error) {
+func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId string, pipelineId int, branchName string) ([]model.PipelineRuns, error) {
+	var lastBuild model.PipelineRuns
 	adoRep := u.Repository
 	defaultRefName, err := adoRep.GetRepositoryById(repositoryId)
 	if err != nil {
@@ -97,19 +105,33 @@ func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId
 	builds = queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
 		return pre.State == "completed"
 	})
+
+	index := 0
+	if branchName == "" {
+		lastBuild = builds[0]
+	} else {
+		index = queryslice.FindIndex(builds, func(pre model.PipelineRuns) bool {
+			return strings.Contains(pre.Resources.Repositories.Self.RefName, branchName)
+		})
+		if index < 0 {
+			return []model.PipelineRuns{}, ErrBranchNameNotExist
+		}
+		lastBuild = builds[index]
+	}
+
 	buildsOnSameRef := queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
-		return pre.Resources.Repositories.Self.RefName == builds[0].Resources.Repositories.Self.RefName
+		return pre.Resources.Repositories.Self.RefName == lastBuild.Resources.Repositories.Self.RefName
 	})
 
 	if len(buildsOnSameRef) > 1 {
 		return []model.PipelineRuns{buildsOnSameRef[0], buildsOnSameRef[1]}, nil
 	}
 
-	lastBuildOnDefaultRefName := queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
+	lastBuildOnDefaultRefName := queryslice.Filter(builds[index:], func(pre model.PipelineRuns) bool {
 		return pre.Resources.Repositories.Self.RefName == defaultRefName.DefaultBranch
 	})[0]
 
-	return []model.PipelineRuns{builds[0], lastBuildOnDefaultRefName}, nil
+	return []model.PipelineRuns{builds[index], lastBuildOnDefaultRefName}, nil
 }
 
 func (u *AdoUsesCases) getAllWorkItems(builds []model.PipelineRuns) ([]model.WorkItem, error) {
