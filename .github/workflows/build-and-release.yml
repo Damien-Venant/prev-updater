@@ -27,7 +27,7 @@ jobs:
 
     - name: Code Coverage
       if: matrix.os == 'ubuntu'
-      run: go test -coverprofile=coverage.txt
+      run: go test $(go list ./... | grep -Eo "(cmd|infra|main|model)") -coverprofile=coverage.txt
       
     - name: Build (linux)
       if: matrix.os == 'ubuntu'
