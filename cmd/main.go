@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -108,22 +107,22 @@ func funcStartBatching(cmd *cobra.Command, args []string) {
 
 	use := usescases.NewAdoUsesCases(repo, logger)
 
-	if err := use.UpdateFieldsByLastRuns(usescases.UpdateFieldsParams{}); err != nil {
-		err = errors.Unwrap(err)
-		for err != nil {
-			logger.Error().
-				Err(err).
-				Stack().
-				Dict("metadata", zerolog.Dict().Int("pipeline-id", int(pipelineId))).
-				Send()
-			err = errors.Unwrap(err)
-		}
+	if err := use.UpdateFieldsByLastRuns(usescases.UpdateFieldsParams{
+		PipelineId:   int(pipelineId),
+		RepositoryId: repositoryId,
+		BranchName:   branchName,
+		FieldName:    fieldName,
+	}); err != nil {
+		logger.Error().
+			Err(err).
+			Stack().
+			Dict("metadata", zerolog.Dict().Int("pipeline-id", int(pipelineId))).
+			Msg("UpdateFields")
 		os.Exit(exitWithError())
 	}
 }
 
 func exitWithError() int {
 	infra.CloseLogFile()
-
 	return EXIT_FAILURE
 }

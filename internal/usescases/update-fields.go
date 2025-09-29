@@ -35,7 +35,6 @@ type UpdateFieldsParams struct {
 	RepositoryId string
 	FieldName    string
 	BranchName   string
-	Path         string
 }
 
 func NewAdoUsesCases(adoRepository AdoRepository, logger *zerolog.Logger) *AdoUsesCases {
@@ -70,14 +69,14 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(param UpdateFieldsParams) error {
 	}
 
 	versionName := lastBuild.Name
-	tabFieldName := strings.Split(param.Path, "/")
+	tabFieldName := strings.Split(param.FieldName, "/")
 	fieldName := tabFieldName[len(tabFieldName)-1]
 	workItemsToUpdatePrev := u.getAllWorkItemsToUpdatePrev(workItems, builds[0].Name, fieldName)
 
 	if len(workItemsToUpdatePrev) > 0 {
 		var errMap error = nil
 		for _, workItem := range workItemsToUpdatePrev {
-			err = u.updateFields(strconv.FormatInt(int64(workItem.Id), 10), versionName, param.Path)
+			err = u.updateFields(strconv.FormatInt(int64(workItem.Id), 10), versionName, param.FieldName)
 			if err != nil {
 				errMap = errors.Join(errMap, err)
 			}
@@ -106,10 +105,12 @@ func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId
 	builds = queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
 		return pre.State == "completed"
 	})
+
+	index := 0
 	if branchName == "" {
 		lastBuild = builds[0]
 	} else {
-		index := queryslice.FindIndex(builds, func(pre model.PipelineRuns) bool {
+		index = queryslice.FindIndex(builds, func(pre model.PipelineRuns) bool {
 			return strings.Contains(pre.Resources.Repositories.Self.RefName, branchName)
 		})
 		if index < 0 {
@@ -117,6 +118,7 @@ func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId
 		}
 		lastBuild = builds[index]
 	}
+
 	buildsOnSameRef := queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
 		return pre.Resources.Repositories.Self.RefName == lastBuild.Resources.Repositories.Self.RefName
 	})
@@ -125,11 +127,11 @@ func (u *AdoUsesCases) getRunsToUpdate(builds []model.PipelineRuns, repositoryId
 		return []model.PipelineRuns{buildsOnSameRef[0], buildsOnSameRef[1]}, nil
 	}
 
-	lastBuildOnDefaultRefName := queryslice.Filter(builds, func(pre model.PipelineRuns) bool {
+	lastBuildOnDefaultRefName := queryslice.Filter(builds[index:], func(pre model.PipelineRuns) bool {
 		return pre.Resources.Repositories.Self.RefName == defaultRefName.DefaultBranch
 	})[0]
 
-	return []model.PipelineRuns{builds[0], lastBuildOnDefaultRefName}, nil
+	return []model.PipelineRuns{builds[index], lastBuildOnDefaultRefName}, nil
 }
 
 func (u *AdoUsesCases) getAllWorkItems(builds []model.PipelineRuns) ([]model.WorkItem, error) {
