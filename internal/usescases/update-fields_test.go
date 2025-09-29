@@ -348,7 +348,11 @@ func TestUpdateFieldsByLastRuns_WhenPipelineRunIsEmpty(t *testing.T) {
 
 	mockRepo.On("GetPipelineRuns", mock.Anything).Return([]model.PipelineRuns{}, nil)
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "CustomPath")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.Nil(t, err)
 }
@@ -359,7 +363,11 @@ func TestUpdateFieldsByLastRuns_WhenPipelineRunReturnAnError(t *testing.T) {
 
 	mockRepo.On("GetPipelineRuns", mock.Anything).Return([]model.PipelineRuns{}, errors.New("err"))
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "CustomPath")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "err", err.Error())
@@ -392,7 +400,11 @@ func TestUpdateFieldsByLastRuns(t *testing.T) {
 	}
 	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.Nil(t, err)
 }
@@ -424,7 +436,11 @@ func TestUpdateFieldsByLastRuns_ShouldReturnError_OnPipelineRuns(t *testing.T) {
 	}
 	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "error", err.Error())
@@ -456,7 +472,11 @@ func TestUpdateFieldsByLastRuns_ShouldReturnError_OnRepositoryId(t *testing.T) {
 	}
 	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "error", err.Error())
@@ -479,7 +499,11 @@ func TestUpdateFieldsByLastRuns_ShouldReturnError_OnBuildWorkItem(t *testing.T) 
 	mockRepo.On("GetBuildWorkItem", 3, 4).Return(buildWorkItems, errors.New("error"))
 	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
 
-	err := uc.UpdateFieldsByLastRuns(862, "62", "Custom")
+	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
+		PipelineId:   862,
+		RepositoryId: "62",
+		FieldName:    "Custom",
+	})
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "error", err.Error())

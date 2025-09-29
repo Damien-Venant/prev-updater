@@ -30,6 +30,14 @@ type AdoUsesCases struct {
 	Logger     *zerolog.Logger
 }
 
+type UpdateFieldsParams struct {
+	PipelineId   int
+	RepositoryId string
+	FieldName    string
+	BranchName   string
+	Path         string
+}
+
 func NewAdoUsesCases(adoRepository AdoRepository, logger *zerolog.Logger) *AdoUsesCases {
 	return &AdoUsesCases{
 		Repository: adoRepository,
@@ -41,16 +49,16 @@ func (u *AdoUsesCases) UpdateFieldsByPipelineId(pipelineId int) error {
 	return nil
 }
 
-func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, path string) error {
+func (u *AdoUsesCases) UpdateFieldsByLastRuns(param UpdateFieldsParams) error {
 	adoRep := u.Repository
-	result, err := adoRep.GetPipelineRuns(pipelineId)
+	result, err := adoRep.GetPipelineRuns(param.PipelineId)
 	if err != nil {
 		return err
 	} else if len(result) == 0 {
 		return nil
 	}
 
-	builds, err := u.getRunsToUpdate(result, repositoryId, pipelineId)
+	builds, err := u.getRunsToUpdate(result, param.RepositoryId, param.PipelineId)
 	if err != nil {
 		return err
 	}
@@ -62,14 +70,14 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(pipelineId int, repositoryId, path
 	}
 
 	versionName := lastBuild.Name
-	tabFieldName := strings.Split(path, "/")
+	tabFieldName := strings.Split(param.Path, "/")
 	fieldName := tabFieldName[len(tabFieldName)-1]
 	workItemsToUpdatePrev := u.getAllWorkItemsToUpdatePrev(workItems, builds[0].Name, fieldName)
 
 	if len(workItemsToUpdatePrev) > 0 {
 		var errMap error = nil
 		for _, workItem := range workItemsToUpdatePrev {
-			err = u.updateFields(strconv.FormatInt(int64(workItem.Id), 10), versionName, path)
+			err = u.updateFields(strconv.FormatInt(int64(workItem.Id), 10), versionName, param.Path)
 			if err != nil {
 				errMap = errors.Join(errMap, err)
 			}

@@ -2,3 +2,19 @@ commit-msg:
   scripts:
     "commit-checker.sh":
       runner: bash
+
+pre-push:
+  parallel: false
+  jobs:
+    - name: build app
+      run: go build ./...
+    - name: test app
+      run: go test ./...
+
+pre-commit:
+  parallel: false
+  jobs:
+    - name: format files
+      run: go fmt && git add .
+    - name: build
+      run: go build ./...
