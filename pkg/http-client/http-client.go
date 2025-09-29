@@ -15,6 +15,10 @@ type (
 		client  *http.Client
 		logger  *zerolog.Logger
 	}
+	HttpClientInterface interface {
+		Get(path string, headers http.Header) (*http.Response, error)
+		Patch(path string, body []byte, headers http.Header) (*http.Response, error)
+	}
 )
 
 const (
