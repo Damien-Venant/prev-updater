@@ -32,11 +32,11 @@ var mappingError map[int]error = map[int]error{
 }
 
 type AzureDevOpsRepository struct {
-	client  *httpClient.HttpClient
+	client  httpClient.HttpClientInterface
 	version string
 }
 
-func New(client *httpClient.HttpClient) *AzureDevOpsRepository {
+func New(client httpClient.HttpClientInterface) *AzureDevOpsRepository {
 	return &AzureDevOpsRepository{
 		client:  client,
 		version: apiVersion,
