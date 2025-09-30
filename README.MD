@@ -1,3 +1,7 @@
+[![Build Prev-Updater](https://github.com/Damien-Venant/prev-updater/actions/workflows/build-prev-updater.yml/badge.svg)](https://github.com/Damien-Venant/prev-updater/actions/workflows/build-prev-updater.yml)
+[![codecov](https://codecov.io/github/Damien-Venant/prev-updater/graph/badge.svg?token=GJGMIPCGL7)](https://codecov.io/github/Damien-Venant/prev-updater)
+
+
 # 🛠 prev-updater
 
 **prev-updater** est un outil en **CLI** écrit en **Go** permettant de mettre à jour la **version prévisionnelle** d’une *User Story* sur **Azure DevOps (ADO)**.  
