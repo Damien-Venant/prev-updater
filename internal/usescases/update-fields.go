@@ -25,17 +25,20 @@ type AdoRepository interface {
 	UpdateWorkitemField(workItemId string, operation model.OperationFields) error
 }
 
-type AdoUsesCases struct {
-	Repository AdoRepository
-	Logger     *zerolog.Logger
-}
+type (
+	Version      [4]int
+	AdoUsesCases struct {
+		Repository AdoRepository
+		Logger     *zerolog.Logger
+	}
 
-type UpdateFieldsParams struct {
-	PipelineId   int
-	RepositoryId string
-	FieldName    string
-	BranchName   string
-}
+	UpdateFieldsParams struct {
+		PipelineId   int
+		RepositoryId string
+		FieldName    string
+		BranchName   string
+	}
+)
 
 func NewAdoUsesCases(adoRepository AdoRepository, logger *zerolog.Logger) *AdoUsesCases {
 	return &AdoUsesCases{
@@ -154,11 +157,13 @@ func (u *AdoUsesCases) getAllWorkItems(builds []model.PipelineRuns) ([]model.Wor
 
 func (u *AdoUsesCases) getAllWorkItemsToUpdatePrev(workItems []model.WorkItem, version, fieldName string) []model.WorkItem {
 	workItems = queryslice.Filter(workItems, func(pre model.WorkItem) bool {
-		workItemVersion, _ := pre.Fields[fieldName].(string)
-		if workItemVersion == "" {
+		workItemVers, _ := pre.Fields[fieldName].(string)
+		if workItemVers == "" {
 			return true
 		}
-		return strings.Compare(workItemVersion, version) == 1
+		actualVersion := newVersion(version)
+		workItemVersion := newVersion(workItemVers)
+		return actualVersion.isHigherThan(workItemVersion) == 1
 	})
 
 	return workItems
@@ -190,4 +195,31 @@ func (u *AdoUsesCases) updateFields(woritemId, name, path string) error {
 	}
 
 	return repo.UpdateWorkitemField(woritemId, modelToUpdload)
+}
+
+// TODO: make some tests
+func (actual Version) isSmallerThan(targetVersion Version) int {
+	for index := 0; index < len(targetVersion); index++ {
+		if actual[index] > targetVersion[index] {
+			return 1
+		} else if actual[index] < targetVersion[index] {
+			return -1
+		}
+	}
+	return 0
+}
+
+// TODO: make some tests
+func (actual Version) isHigherThan(targetVersion Version) int {
+	return -actual.isSmallerThan(targetVersion)
+}
+
+func newVersion(version string) Version {
+	result := Version{}
+	res := strings.Split(version, ".")
+	for index, val := range res {
+		resultConv, _ := strconv.ParseInt(val, 10, 32)
+		result[index] = int(resultConv)
+	}
+	return result
 }

@@ -233,11 +233,17 @@ func TestGetAllWorkItemsToUpdatePrev_OnlyWorkItemWithUpperVersionThanBuild(t *te
 				"test": "25.5.5.3",
 			},
 		},
+		{
+			Id: 4,
+			Fields: map[string]interface{}{
+				"test": "25.5.10.3",
+			},
+		},
 	}
 	result := uc.getAllWorkItemsToUpdatePrev(builds, "25.5.5.5", "test")
-	assert.Equal(t, 2, len(result))
+	assert.Equal(t, 3, len(result))
 	for _, res := range result {
-		assert.Contains(t, []int{1, 2}, res.Id)
+		assert.Contains(t, []int{1, 2, 4}, res.Id)
 	}
 }
 
