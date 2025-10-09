@@ -163,7 +163,7 @@ func (u *AdoUsesCases) getAllWorkItemsToUpdatePrev(workItems []model.WorkItem, v
 		}
 		actualVersion := newVersion(version)
 		workItemVersion := newVersion(workItemVers)
-		return actualVersion.isHigherThan(workItemVersion) == 1
+		return actualVersion.isSmallerThan(workItemVersion) == 1
 	})
 
 	return workItems
@@ -197,19 +197,17 @@ func (u *AdoUsesCases) updateFields(woritemId, name, path string) error {
 	return repo.UpdateWorkitemField(woritemId, modelToUpdload)
 }
 
-// TODO: make some tests
 func (actual Version) isSmallerThan(targetVersion Version) int {
 	for index := 0; index < len(targetVersion); index++ {
 		if actual[index] > targetVersion[index] {
-			return 1
-		} else if actual[index] < targetVersion[index] {
 			return -1
+		} else if actual[index] < targetVersion[index] {
+			return 1
 		}
 	}
 	return 0
 }
 
-// TODO: make some tests
 func (actual Version) isHigherThan(targetVersion Version) int {
 	return -actual.isSmallerThan(targetVersion)
 }
