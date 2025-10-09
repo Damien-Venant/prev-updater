@@ -553,3 +553,167 @@ func TestUpdateFieldsByLastRuns_ShouldReturnError_OnBuildWorkItem(t *testing.T) 
 	assert.NotNil(t, err)
 	assert.Equal(t, "error", err.Error())
 }
+
+func TestIsSmallerThan_ShouldReturnOne_WhenIsSmaller(t *testing.T) {
+	tests := []struct {
+		Actual Version
+		Target Version
+		Result int
+	}{
+		{
+			Actual: newVersion("25.5.5.5"),
+			Target: newVersion("25.5.5.6"),
+			Result: 1,
+		},
+		{
+			Actual: newVersion("25.5.5.5"),
+			Target: newVersion("25.5.6.5"),
+			Result: 1,
+		},
+		{
+			Actual: newVersion("25.5.5.5"),
+			Target: newVersion("25.6.5.5"),
+			Result: 1,
+		},
+		{
+			Actual: newVersion("25.5.5.5"),
+			Target: newVersion("26.5.5.5"),
+			Result: 1,
+		},
+	}
+
+	for index, test := range tests {
+		name := fmt.Sprintf("TestIsSmallerThan_ShouldReturnOne_WhenIsSmaller_%d", index)
+		t.Run(name, func(t *testing.T) {
+			result := test.Actual.isSmallerThan(test.Target)
+			assert.Equal(t, test.Result, result)
+		})
+	}
+}
+
+func TestIsSmallerThan_ShouldReturnMinusOne_WhenIsUpper(t *testing.T) {
+	tests := []struct {
+		Actual Version
+		Target Version
+		Result int
+	}{
+		{
+			Actual: newVersion("25.5.5.6"),
+			Target: newVersion("25.5.5.5"),
+			Result: -1,
+		},
+		{
+			Actual: newVersion("25.5.6.5"),
+			Target: newVersion("25.5.5.5"),
+			Result: -1,
+		},
+		{
+			Actual: newVersion("25.6.5.5"),
+			Target: newVersion("25.5.5.5"),
+			Result: -1,
+		},
+		{
+			Actual: newVersion("26.5.5.5"),
+			Target: newVersion("25.5.5.5"),
+			Result: -1,
+		},
+	}
+
+	for index, test := range tests {
+		name := fmt.Sprintf("TestIsSmallerThan_ShouldReturnMinusOne_WhenIsUpper_%d", index)
+		t.Run(name, func(t *testing.T) {
+			result := test.Actual.isSmallerThan(test.Target)
+			assert.Equal(t, test.Result, result)
+		})
+	}
+}
+
+func TestIsSmallerThan_ShouldReturnZero_WhenIsEqual(t *testing.T) {
+	actual := newVersion("25.5.5.5")
+	target := newVersion("25.5.5.5")
+
+	result := actual.isSmallerThan(target)
+	assert.Equal(t, 0, result)
+}
+
+func TestIsHigherThan_ShouldReturnMinusOne_WhenIsSmaller(t *testing.T) {
+	tests := []struct {
+		Actual Version
+		Target Version
+		Result int
+	}{
+		{
+			Actual: newVersion("25.5.5.5"),
+			Target: newVersion("25.5.5.6"),
+			Result: -1,
+		},
+		{
+			Actual: newVersion("25.5.5.5"),
+			Target: newVersion("25.5.6.5"),
+			Result: -1,
+		},
+		{
+			Actual: newVersion("25.5.5.5"),
+			Target: newVersion("25.6.5.5"),
+			Result: -1,
+		},
+		{
+			Actual: newVersion("25.5.5.5"),
+			Target: newVersion("26.5.5.5"),
+			Result: -1,
+		},
+	}
+
+	for index, test := range tests {
+		name := fmt.Sprintf("TestIsHigherThan_ShouldReturnMinusOne_WhenIsSmaller_%d", index)
+		t.Run(name, func(t *testing.T) {
+			result := test.Actual.isHigherThan(test.Target)
+			assert.Equal(t, test.Result, result)
+		})
+	}
+}
+
+func TestIsHigherThan_ShouldReturnZero_WhenIsUpper(t *testing.T) {
+	tests := []struct {
+		Actual Version
+		Target Version
+		Result int
+	}{
+		{
+			Actual: newVersion("25.5.5.6"),
+			Target: newVersion("25.5.5.5"),
+			Result: 1,
+		},
+		{
+			Actual: newVersion("25.5.6.5"),
+			Target: newVersion("25.5.5.5"),
+			Result: 1,
+		},
+		{
+			Actual: newVersion("25.6.5.5"),
+			Target: newVersion("25.5.5.5"),
+			Result: 1,
+		},
+		{
+			Actual: newVersion("26.5.5.5"),
+			Target: newVersion("25.5.5.5"),
+			Result: 1,
+		},
+	}
+
+	for index, test := range tests {
+		name := fmt.Sprintf("TestIsHigherThan_ShouldReturnOne_WhenIsUpper_%d", index)
+		t.Run(name, func(t *testing.T) {
+			result := test.Actual.isHigherThan(test.Target)
+			assert.Equal(t, test.Result, result)
+		})
+	}
+}
+
+func TestIsHigherThan_ShouldReturnZero_WhenIsEqual(t *testing.T) {
+	version1 := newVersion("25.5.5.5")
+	version2 := newVersion("25.5.5.5")
+
+	result := version1.isSmallerThan(version2)
+	assert.Equal(t, 0, result)
+}
