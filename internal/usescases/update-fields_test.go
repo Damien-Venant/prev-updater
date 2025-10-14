@@ -274,6 +274,60 @@ func TestGetAllWorkItemsToUpdatePrev_ReturnZeroWorkItemWhenWorkItemVersionIsLowe
 	result := uc.getAllWorkItemsToUpdatePrev(builds, "25.5.5.5", "test")
 	assert.Equal(t, 0, len(result))
 }
+func TestGetAllWorkItemsToUpdatePrev_ReturnZeroWorkItemWhenWorkItemVersionIsEmpty(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := &AdoUsesCases{Repository: mockRepo}
+
+	builds := []model.WorkItem{
+		{
+			Id: 1,
+			Fields: map[string]interface{}{
+				"test": "",
+			},
+		},
+		{
+			Id: 2,
+			Fields: map[string]interface{}{
+				"test": "",
+			},
+		},
+		{
+			Id: 3,
+			Fields: map[string]interface{}{
+				"test": "",
+			},
+		},
+	}
+	result := uc.getAllWorkItemsToUpdatePrev(builds, "25.5.5.5", "test")
+	assert.Equal(t, 3, len(result))
+}
+func TestGetAllWorkItemsToUpdatePrev_ReturnZeroWorkItemWhenWorkItemVersionIsBadlyFormated(t *testing.T) {
+	mockRepo := new(MockRepository)
+	uc := &AdoUsesCases{Repository: mockRepo}
+
+	builds := []model.WorkItem{
+		{
+			Id: 1,
+			Fields: map[string]interface{}{
+				"test": "sqdsqds.23dsqdsq.23.23",
+			},
+		},
+		{
+			Id: 2,
+			Fields: map[string]interface{}{
+				"test": "test.dsqdsq.dsqdsq.dsq",
+			},
+		},
+		{
+			Id: 3,
+			Fields: map[string]interface{}{
+				"test": "je ne sais pas quoi mettre",
+			},
+		},
+	}
+	result := uc.getAllWorkItemsToUpdatePrev(builds, "25.5.5.5", "test")
+	assert.Equal(t, 3, len(result))
+}
 
 func TestGetAllWorkItems_ReturnAllWorkItems(t *testing.T) {
 	mockRepo := new(MockRepository)
