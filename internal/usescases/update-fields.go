@@ -3,6 +3,7 @@ package usescases
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -156,9 +157,13 @@ func (u *AdoUsesCases) getAllWorkItems(builds []model.PipelineRuns) ([]model.Wor
 }
 
 func (u *AdoUsesCases) getAllWorkItemsToUpdatePrev(workItems []model.WorkItem, version, fieldName string) []model.WorkItem {
+	reg, err := regexp.Compile(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$`)
+	if err != nil {
+		panic(err)
+	}
 	workItems = queryslice.Filter(workItems, func(pre model.WorkItem) bool {
 		workItemVers, _ := pre.Fields[fieldName].(string)
-		if workItemVers == "" {
+		if workItemVers == "" || !reg.MatchString(workItemVers) {
 			return true
 		}
 		actualVersion := newVersion(version)
