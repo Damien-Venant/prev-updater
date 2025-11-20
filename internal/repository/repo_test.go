@@ -28,6 +28,11 @@ func (m *MockHttpClient) Patch(path string, body []byte, headers http.Header) (*
 	return args.Get(0).(*http.Response), args.Error(1)
 }
 
+func (m *MockHttpClient) Post(path string, body []byte, headers http.Header) (*http.Response, error) {
+	args := m.Called(path, body, headers)
+	return args.Get(0).(*http.Response), args.Error(1)
+}
+
 // Helper pour créer une réponse HTTP avec JSON body
 func makeHttpResponse(statusCode int, body interface{}) *http.Response {
 	jsonBody, _ := json.Marshal(body)

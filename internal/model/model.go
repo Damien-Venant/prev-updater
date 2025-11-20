@@ -48,4 +48,7 @@ type (
 		Url           string `json:"url"`
 		RemoteUrl     string `json:"remoteUrl"`
 	}
+
+	N8nResult struct {
+	}
 )

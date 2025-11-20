@@ -25,6 +25,10 @@ type AdoRepository interface {
 	UpdateWorkitemField(workItemId string, operation model.OperationFields) error
 }
 
+type N8nRepository interface {
+	PostWebhook(data model.N8nResult) error
+}
+
 type (
 	Version      [4]int
 	AdoUsesCases struct {
