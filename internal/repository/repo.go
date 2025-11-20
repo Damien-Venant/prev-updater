@@ -22,7 +22,7 @@ type AzureDevOpsRepository struct {
 	version string
 }
 
-func New(client httpClient.HttpClientInterface) *AzureDevOpsRepository {
+func NewAdoRepository(client httpClient.HttpClientInterface) *AzureDevOpsRepository {
 	return &AzureDevOpsRepository{
 		client:  client,
 		version: apiVersion,

@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/Damien-Venant/prev-updater/internal/infra"
 	"github.com/Damien-Venant/prev-updater/internal/repository"
 	"github.com/Damien-Venant/prev-updater/internal/usescases"
+	httpclient "github.com/Damien-Venant/prev-updater/pkg/http-client"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
@@ -103,9 +105,11 @@ func funcStartBatching(cmd *cobra.Command, args []string) {
 		Token:   token,
 	}, logger)
 	client := infra.GetHttpClient()
-	repo := repository.New(client)
+	n8nClient := httpclient.New("", http.Header{}, logger)
+	n8nRepo := repository.NewN8nRepository(*n8nClient)
+	repo := repository.NewAdoRepository(client)
 
-	use := usescases.NewAdoUsesCases(repo, logger)
+	use := usescases.NewAdoUsesCases(repo, n8nRepo, logger)
 
 	if err := use.UpdateFieldsByLastRuns(usescases.UpdateFieldsParams{
 		PipelineId:   int(pipelineId),

@@ -45,7 +45,7 @@ func makeHttpResponse(statusCode int, body interface{}) *http.Response {
 
 func TestGetPipelineRun(t *testing.T) {
 	mockClient := new(MockHttpClient)
-	repo := New(mockClient)
+	repo := NewAdoRepository(mockClient)
 
 	expectedRun := model.PipelineRuns{Id: 123}
 
@@ -64,7 +64,7 @@ func TestGetPipelineRun(t *testing.T) {
 
 func TestGetPipelineRuns(t *testing.T) {
 	mockClient := new(MockHttpClient)
-	repo := New(mockClient)
+	repo := NewAdoRepository(mockClient)
 
 	// mock pagination response
 	paginationValue := struct {
@@ -102,7 +102,7 @@ func TestGetPipelineRuns(t *testing.T) {
 
 func TestGetBuildWorkItem(t *testing.T) {
 	mockClient := new(MockHttpClient)
-	repo := New(mockClient)
+	repo := NewAdoRepository(mockClient)
 
 	paginated := struct {
 		Count int                    `json:"count"`
@@ -129,7 +129,7 @@ func TestGetBuildWorkItem(t *testing.T) {
 
 func TestGetWorkItem(t *testing.T) {
 	mockClient := new(MockHttpClient)
-	repo := New(mockClient)
+	repo := NewAdoRepository(mockClient)
 
 	expectedItem := model.WorkItem{Id: 42}
 
@@ -150,7 +150,7 @@ func TestGetWorkItem(t *testing.T) {
 
 func TestUpdateWorkitemField(t *testing.T) {
 	mockClient := new(MockHttpClient)
-	repo := New(mockClient)
+	repo := NewAdoRepository(mockClient)
 
 	mockResp := &http.Response{
 		StatusCode: 200,
@@ -174,7 +174,7 @@ func TestUpdateWorkitemField(t *testing.T) {
 
 func TestGetRepositoryById(t *testing.T) {
 	mockClient := new(MockHttpClient)
-	repo := New(mockClient)
+	repo := NewAdoRepository(mockClient)
 
 	expectedRepo := model.Repository{Id: "uuid-123"}
 

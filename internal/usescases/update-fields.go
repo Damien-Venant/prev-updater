@@ -32,6 +32,7 @@ type N8nRepository interface {
 type (
 	Version      [4]int
 	AdoUsesCases struct {
+		N8nRepo    N8nRepository
 		Repository AdoRepository
 		Logger     *zerolog.Logger
 	}
@@ -44,8 +45,9 @@ type (
 	}
 )
 
-func NewAdoUsesCases(adoRepository AdoRepository, logger *zerolog.Logger) *AdoUsesCases {
+func NewAdoUsesCases(adoRepository AdoRepository, N8nRepo N8nRepository, logger *zerolog.Logger) *AdoUsesCases {
 	return &AdoUsesCases{
+		N8nRepo:    N8nRepo,
 		Repository: adoRepository,
 		Logger:     logger,
 	}
