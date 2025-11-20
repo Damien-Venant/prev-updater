@@ -250,6 +250,7 @@ func WorkItemToN8NResult(workitems []model.WorkItem) model.N8nResult {
 		integrationBuild = strings.TrimSpace(integrationBuild)
 
 		wItems[index] = model.N8NWorkItems{
+			Id:               val.Id,
 			Title:            title,
 			Tags:             strings.Split(tags, ";"),
 			IntegrationBuild: strings.Split(integrationBuild, "|"),

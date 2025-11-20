@@ -82,7 +82,7 @@ func (h *HttpClient) Post(path string, body []byte, headers http.Header) (*http.
 	url := fmt.Sprintf("%s/%s", h.BaseUrl, path)
 	h.logger.
 		Info().
-		Dict("request-data", zerolog.Dict().Str("url", url).Str("method", "PATCH").Str("body", string(body))).
+		Dict("request-data", zerolog.Dict().Str("url", url).Str("method", "POST").Str("body", string(body))).
 		Msg("Send request")
 
 	request, err := http.NewRequest("POST", url, bytes.NewReader(body))

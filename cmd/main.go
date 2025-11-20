@@ -28,6 +28,7 @@ var (
 	repositoryId string = ""
 	fieldName    string = ""
 	branchName   string = ""
+	n8nUrl       string = ""
 
 	logger *zerolog.Logger = nil
 )
@@ -61,6 +62,7 @@ func init() {
 	launchCommand.Flags().StringVarP(&repositoryId, "repository", "r", "", "set repository id")
 	launchCommand.Flags().StringVarP(&fieldName, "field", "f", "", "set field name")
 	launchCommand.Flags().StringVarP(&branchName, "branch-name", "", "", "set branch name")
+	launchCommand.Flags().StringVarP(&n8nUrl, "n8n-url", "", "", "set n8n url")
 
 	launchCommand.MarkFlagRequired("token")
 	launchCommand.MarkFlagRequired("organisation")
@@ -105,7 +107,7 @@ func funcStartBatching(cmd *cobra.Command, args []string) {
 		Token:   token,
 	}, logger)
 	client := infra.GetHttpClient()
-	n8nClient := httpclient.New("https://n8n.septeo.fr/webhook-test/e0801d94-3617-4903-99a0-fcba8f007c1d", http.Header{}, logger)
+	n8nClient := httpclient.New(n8nUrl, http.Header{}, logger)
 	n8nRepo := repository.NewN8nRepository(*n8nClient)
 	repo := repository.NewAdoRepository(client)
 

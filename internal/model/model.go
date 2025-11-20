@@ -56,6 +56,7 @@ type (
 	}
 
 	N8NWorkItems struct {
+		Id               int      `json:"id"`
 		Title            string   `json:"title"`
 		Tags             []string `json:"tags"`
 		IntegrationBuild []string `json:"integration-builds"`
