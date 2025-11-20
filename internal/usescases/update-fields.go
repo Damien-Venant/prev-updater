@@ -95,6 +95,7 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(param UpdateFieldsParams) error {
 
 	if len(workItems) > 0 {
 		u.updateAdoIntegrationBuild(workItems, versionName)
+		//Todo add n8n call
 	}
 	return nil
 }
