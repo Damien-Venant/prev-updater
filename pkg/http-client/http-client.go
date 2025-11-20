@@ -18,6 +18,7 @@ type (
 	HttpClientInterface interface {
 		Get(path string, headers http.Header) (*http.Response, error)
 		Patch(path string, body []byte, headers http.Header) (*http.Response, error)
+		Post(path string, body []byte, headers http.Header) (*http.Response, error)
 	}
 )
 
@@ -74,6 +75,29 @@ func (h *HttpClient) Patch(path string, body []byte, headers http.Header) (*http
 	request.Header.Set("Content-Type", "application/json-patch+json")
 	setHeader(request, headers)
 
+	return h.client.Do(request)
+}
+
+func (h *HttpClient) Post(path string, body []byte, headers http.Header) (*http.Response, error) {
+	url := fmt.Sprintf("%s/%s", h.BaseUrl, path)
+	h.logger.
+		Info().
+		Dict("request-data", zerolog.Dict().Str("url", url).Str("method", "PATCH").Str("body", string(body))).
+		Msg("Send request")
+
+	request, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	if err != nil {
+		h.logger.
+			Error().
+			Stack().
+			Err(err).
+			Send()
+		return nil, err
+	}
+	request.Header = h.Headers
+	request.Header.Set("Content-Type", "application/json")
+
+	setHeader(request, headers)
 	return h.client.Do(request)
 }
 
