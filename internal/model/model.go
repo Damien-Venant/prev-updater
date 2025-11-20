@@ -50,14 +50,14 @@ type (
 	}
 
 	N8nResult struct {
-		TargetBranch string `json:"target-branch"`
-		SourceBranch string `json:"source-branch"`
-		WorkItems    []struct {
-			Title            string   `json:"title"`
-			Description      string   `json:"description"`
-			Tags             []string `json:"Tags"`
-			IntegrationBuild []string `json:"integration-builds"`
-			Provisional      string   `json:"provisional"`
-		} `json:"work-items"`
+		Version      string         `json:"version"`
+		SourceBranch string         `json:"source-branch"`
+		WorkItems    []N8NWorkItems `json:"work-items"`
+	}
+
+	N8NWorkItems struct {
+		Title            string   `json:"title"`
+		Tags             []string `json:"tags"`
+		IntegrationBuild []string `json:"integration-builds"`
 	}
 )

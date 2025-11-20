@@ -105,7 +105,7 @@ func funcStartBatching(cmd *cobra.Command, args []string) {
 		Token:   token,
 	}, logger)
 	client := infra.GetHttpClient()
-	n8nClient := httpclient.New("", http.Header{}, logger)
+	n8nClient := httpclient.New("https://n8n.septeo.fr/webhook-test/e0801d94-3617-4903-99a0-fcba8f007c1d", http.Header{}, logger)
 	n8nRepo := repository.NewN8nRepository(*n8nClient)
 	repo := repository.NewAdoRepository(client)
 

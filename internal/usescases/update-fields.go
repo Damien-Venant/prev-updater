@@ -14,6 +14,8 @@ import (
 const (
 	AdoIntegrationBuildFieldName string = "Microsoft.VSTS.Build.IntegrationBuild"
 	AdoIntegrationPath           string = "/fields/" + AdoIntegrationBuildFieldName
+	AdoTitleFieldName            string = "System.Title"
+	AdoTagsFieldName             string = "System.Tags"
 )
 
 type AdoRepository interface {
@@ -97,7 +99,8 @@ func (u *AdoUsesCases) UpdateFieldsByLastRuns(param UpdateFieldsParams) error {
 
 	if len(workItems) > 0 {
 		u.updateAdoIntegrationBuild(workItems, versionName)
-		//Todo add n8n call
+		err := u.sendDataToN8N(workItems, versionName, param.BranchName)
+		return err
 	}
 	return nil
 }
@@ -204,6 +207,14 @@ func (u *AdoUsesCases) updateFields(woritemId, name, path string) error {
 	return repo.UpdateWorkitemField(woritemId, modelToUpdload)
 }
 
+func (u *AdoUsesCases) sendDataToN8N(workitems []model.WorkItem, version string, sourceBranch string) error {
+	data := WorkItemToN8NResult(workitems)
+	data.Version = version
+	data.SourceBranch = sourceBranch
+
+	return u.N8nRepo.PostWebhook(data)
+}
+
 func (actual Version) isSmallerThan(targetVersion Version) int {
 	for index := 0; index < len(targetVersion); index++ {
 		if actual[index] > targetVersion[index] {
@@ -227,4 +238,25 @@ func newVersion(version string) Version {
 		result[index] = int(resultConv)
 	}
 	return result
+}
+
+func WorkItemToN8NResult(workitems []model.WorkItem) model.N8nResult {
+	wItems := make([]model.N8NWorkItems, len(workitems))
+
+	for index, val := range workitems {
+		title := val.Fields[AdoTitleFieldName].(string)
+		tags := val.Fields[AdoTagsFieldName].(string)
+		integrationBuild := val.Fields[AdoIntegrationBuildFieldName].(string)
+		integrationBuild = strings.TrimSpace(integrationBuild)
+
+		wItems[index] = model.N8NWorkItems{
+			Title:            title,
+			Tags:             strings.Split(tags, ";"),
+			IntegrationBuild: strings.Split(integrationBuild, "|"),
+		}
+	}
+
+	return model.N8nResult{
+		WorkItems: wItems,
+	}
 }
