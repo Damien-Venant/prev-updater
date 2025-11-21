@@ -19,6 +19,10 @@ type MockAdoUseCases struct {
 	mock.Mock
 }
 
+type MockN8N struct {
+	mock.Mock
+}
+
 func (m *MockRepository) GetRepositoryById(repositoryId string) (*model.Repository, error) {
 	args := m.Called(repositoryId)
 	val := args.Get(0).(model.Repository)
@@ -48,6 +52,11 @@ func (m *MockRepository) GetWorkItem(workItemId string) (*model.WorkItem, error)
 }
 func (m *MockRepository) UpdateWorkitemField(workItemId string, operation model.OperationFields) error {
 	return nil
+}
+
+func (m *MockN8N) PostWebhook(data model.N8nResult) error {
+	args := m.Called(data)
+	return args.Error(0)
 }
 
 // Setup d’un run
@@ -420,7 +429,8 @@ func TestUpdateFieldsByLastRuns_WhenPipelineRunReturnAnError(t *testing.T) {
 
 func TestUpdateFieldsByLastRuns(t *testing.T) {
 	mockRepo := new(MockRepository)
-	uc := AdoUsesCases{Repository: mockRepo}
+	mockN8N := new(MockN8N)
+	uc := AdoUsesCases{Repository: mockRepo, N8nRepo: mockN8N}
 
 	pipelineRuns := []model.PipelineRuns{
 		createPipelineRun("main", "25.6.5.0", 4),
@@ -432,10 +442,10 @@ func TestUpdateFieldsByLastRuns(t *testing.T) {
 		{Id: "1"}, {Id: "2"}, {Id: "3"}, {Id: "4"},
 	}
 	workItems := []model.WorkItem{
-		createWorkItem(1, map[string]interface{}{"Custom": ""}),
-		createWorkItem(2, map[string]interface{}{"Custom": ""}),
-		createWorkItem(3, map[string]interface{}{"Custom": ""}),
-		createWorkItem(4, map[string]interface{}{"Custom": ""}),
+		createWorkItem(1, map[string]interface{}{"Custom": "", "System.Title": "", "System.Tags": "", "Microsoft.VSTS.Build.IntegrationBuild": ""}),
+		createWorkItem(2, map[string]interface{}{"Custom": "", "System.Title": "", "System.Tags": "", "Microsoft.VSTS.Build.IntegrationBuild": ""}),
+		createWorkItem(3, map[string]interface{}{"Custom": "", "System.Title": "", "System.Tags": "", "Microsoft.VSTS.Build.IntegrationBuild": ""}),
+		createWorkItem(4, map[string]interface{}{"Custom": "", "System.Title": "", "System.Tags": "", "Microsoft.VSTS.Build.IntegrationBuild": ""}),
 	}
 	mockRepo.On("GetPipelineRuns", mock.Anything).Return(pipelineRuns, nil)
 	mockRepo.On("GetRepositoryById", mock.Anything).Return(model.Repository{Id: "1", DefaultBranch: "main", Url: ""}, nil)
@@ -444,6 +454,7 @@ func TestUpdateFieldsByLastRuns(t *testing.T) {
 		mockRepo.On("GetWorkItem", fmt.Sprintf("%d", workItem.Id)).Return(workItem, nil)
 	}
 	mockRepo.On("UpdateWorkItemField", mock.Anything, mock.Anything)
+	mockN8N.On("PostWebhook", mock.Anything).Return(nil)
 
 	err := uc.UpdateFieldsByLastRuns(UpdateFieldsParams{
 		PipelineId:   862,
