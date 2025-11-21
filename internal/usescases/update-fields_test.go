@@ -728,3 +728,47 @@ func TestIsHigherThan_ShouldReturnZero_WhenIsEqual(t *testing.T) {
 	result := version1.isSmallerThan(version2)
 	assert.Equal(t, 0, result)
 }
+
+func TestSendToN8N(t *testing.T) {
+	tests := []struct {
+		workItems    []model.WorkItem
+		version      string
+		sourceBranch string
+	}{
+		{
+			workItems: []model.WorkItem{
+				createWorkItem(1, map[string]interface{}{"System.Title": "Test 1", "System.Tags": "25.4.13;1.1.1.1", "Microsoft.VSTS.Build.IntegrationBuild": "25.4.13|1.1.1.1"}),
+				createWorkItem(2, map[string]interface{}{"System.Title": "Test 2", "System.Tags": "25.4.13;1.1.1.1", "Microsoft.VSTS.Build.IntegrationBuild": "25.4.13|1.1.1.1"}),
+				createWorkItem(3, map[string]interface{}{"System.Title": "Test 3", "System.Tags": "25.4.13;1.1.1.1", "Microsoft.VSTS.Build.IntegrationBuild": "25.4.13|1.1.1.1"}),
+				createWorkItem(4, map[string]interface{}{"System.Title": "Test 4", "System.Tags": "25.4.13;1.1.1.1", "Microsoft.VSTS.Build.IntegrationBuild": "25.4.13|1.1.1.1"}),
+			},
+			version:      "25.5.10",
+			sourceBranch: "develop",
+		},
+		{
+			workItems: []model.WorkItem{
+				createWorkItem(1, map[string]interface{}{"System.Title": "Test 1", "System.Tags": "25.4.13;1.1.1.1", "Microsoft.VSTS.Build.IntegrationBuild": "25.4.13|1.1.1.1"}),
+				createWorkItem(2, map[string]interface{}{"System.Title": "Test 2", "System.Tags": "25.4.13;1.1.1.1", "Microsoft.VSTS.Build.IntegrationBuild": "25.4.13|1.1.1.1"}),
+				createWorkItem(3, map[string]interface{}{"System.Title": "Test 3", "System.Tags": "25.4.13;1.1.1.1", "Microsoft.VSTS.Build.IntegrationBuild": "25.4.13|1.1.1.1"}),
+				createWorkItem(4, map[string]interface{}{"System.Title": "Test 4", "System.Tags": "25.4.13;1.1.1.1", "Microsoft.VSTS.Build.IntegrationBuild": "25.4.13|1.1.1.1"}),
+			},
+			version:      "25.5.10",
+			sourceBranch: "develop",
+		},
+	}
+
+	mockN8n := new(MockN8N)
+	mockN8n.On("PostWebhook", mock.Anything).Return(nil)
+
+	for index, test := range tests {
+		name := fmt.Sprintf("TestSendToN8N_%d", index)
+		t.Run(name, func(t *testing.T) {
+			usecase := AdoUsesCases{
+				N8nRepo: mockN8n,
+			}
+			result := usecase.sendDataToN8N(test.workItems, test.version, test.sourceBranch)
+
+			assert.Nil(t, result)
+		})
+	}
+}
