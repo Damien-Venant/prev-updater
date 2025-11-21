@@ -48,4 +48,17 @@ type (
 		Url           string `json:"url"`
 		RemoteUrl     string `json:"remoteUrl"`
 	}
+
+	N8nResult struct {
+		Version      string         `json:"version"`
+		SourceBranch string         `json:"source-branch"`
+		WorkItems    []N8NWorkItems `json:"work-items"`
+	}
+
+	N8NWorkItems struct {
+		Id               int      `json:"id"`
+		Title            string   `json:"title"`
+		Tags             []string `json:"tags"`
+		IntegrationBuild []string `json:"integration-builds"`
+	}
 )

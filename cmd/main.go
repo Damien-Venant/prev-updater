@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/Damien-Venant/prev-updater/internal/infra"
 	"github.com/Damien-Venant/prev-updater/internal/repository"
 	"github.com/Damien-Venant/prev-updater/internal/usescases"
+	httpclient "github.com/Damien-Venant/prev-updater/pkg/http-client"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
@@ -26,6 +28,7 @@ var (
 	repositoryId string = ""
 	fieldName    string = ""
 	branchName   string = ""
+	n8nUrl       string = ""
 
 	logger *zerolog.Logger = nil
 )
@@ -59,6 +62,7 @@ func init() {
 	launchCommand.Flags().StringVarP(&repositoryId, "repository", "r", "", "set repository id")
 	launchCommand.Flags().StringVarP(&fieldName, "field", "f", "", "set field name")
 	launchCommand.Flags().StringVarP(&branchName, "branch-name", "", "", "set branch name")
+	launchCommand.Flags().StringVarP(&n8nUrl, "n8n-url", "", "", "set n8n url")
 
 	launchCommand.MarkFlagRequired("token")
 	launchCommand.MarkFlagRequired("organisation")
@@ -103,9 +107,11 @@ func funcStartBatching(cmd *cobra.Command, args []string) {
 		Token:   token,
 	}, logger)
 	client := infra.GetHttpClient()
-	repo := repository.New(client)
+	n8nClient := httpclient.New(n8nUrl, http.Header{}, logger)
+	n8nRepo := repository.NewN8nRepository(*n8nClient)
+	repo := repository.NewAdoRepository(client)
 
-	use := usescases.NewAdoUsesCases(repo, logger)
+	use := usescases.NewAdoUsesCases(repo, n8nRepo, logger)
 
 	if err := use.UpdateFieldsByLastRuns(usescases.UpdateFieldsParams{
 		PipelineId:   int(pipelineId),
