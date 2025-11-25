@@ -33,10 +33,6 @@ jobs:
       if: matrix.os == 'ubuntu'
       run: go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o ./bin/prev-updater-${{ matrix.os }} ./cmd/main.go 
 
-    - name: Build (windows)
-      if: matrix.os == 'windows'
-      run: go build -ldflags "-X main.versionTool=${{ env.VERSION }}" -v -o ./bin/prev-updater-${{ matrix.os }}.exe .\cmd\main.go
-      
     - name: Upload coverage reports to Codecov
       if: matrix.os == 'ubuntu'
       uses: codecov/codecov-action@v5
@@ -78,7 +74,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./bin/prev-updater-ubuntu/prev-updater-ubuntu
+          asset_path: ./bin/prev-updater-ubuntu
           asset_name: prev-updater-linux-${{ env.VERSION }}
           asset_content_type: application/octet-stream
 
