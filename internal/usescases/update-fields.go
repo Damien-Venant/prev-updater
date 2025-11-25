@@ -245,11 +245,21 @@ func WorkItemToN8NResult(workitems []model.WorkItem) model.N8nResult {
 	wItems := make([]model.N8NWorkItems, len(workitems))
 
 	for index, val := range workitems {
+		tags := []string{}
+		integrations := []string{}
+
+		if tagsStr := utils.Coalesce[string](val.Fields[AdoTagsFieldName], ""); tagsStr != "" {
+			tags = strings.Split(tagsStr, ";")
+		}
+		if integrationBuild := utils.Coalesce[string](val.Fields[AdoIntegrationBuildFieldName], ""); integrationBuild != "" {
+			integrations = strings.Split(integrationBuild, "|")
+		}
+
 		wItems[index] = model.N8NWorkItems{
 			Id:               val.Id,
 			Title:            utils.Coalesce[string](val.Fields[AdoTitleFieldName], ""),
-			Tags:             strings.Split(utils.Coalesce[string](val.Fields[AdoTagsFieldName], ""), ";"),
-			IntegrationBuild: strings.Split(utils.Coalesce[string](val.Fields[AdoIntegrationBuildFieldName], ""), "|"),
+			Tags:             tags,
+			IntegrationBuild: integrations,
 		}
 	}
 
