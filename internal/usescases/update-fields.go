@@ -8,6 +8,7 @@ import (
 
 	"github.com/Damien-Venant/prev-updater/internal/model"
 	"github.com/Damien-Venant/prev-updater/pkg/queryslice"
+	"github.com/Damien-Venant/prev-updater/pkg/utils"
 	"github.com/rs/zerolog"
 )
 
@@ -244,16 +245,11 @@ func WorkItemToN8NResult(workitems []model.WorkItem) model.N8nResult {
 	wItems := make([]model.N8NWorkItems, len(workitems))
 
 	for index, val := range workitems {
-		title := val.Fields[AdoTitleFieldName].(string)
-		tags := val.Fields[AdoTagsFieldName].(string)
-		integrationBuild := val.Fields[AdoIntegrationBuildFieldName].(string)
-		integrationBuild = strings.TrimSpace(integrationBuild)
-
 		wItems[index] = model.N8NWorkItems{
 			Id:               val.Id,
-			Title:            title,
-			Tags:             strings.Split(tags, ";"),
-			IntegrationBuild: strings.Split(integrationBuild, "|"),
+			Title:            utils.Coalesce[string](val.Fields[AdoTitleFieldName], ""),
+			Tags:             strings.Split(utils.Coalesce[string](val.Fields[AdoTagsFieldName], ""), ";"),
+			IntegrationBuild: strings.Split(utils.Coalesce[string](val.Fields[AdoIntegrationBuildFieldName], ""), "|"),
 		}
 	}
 
