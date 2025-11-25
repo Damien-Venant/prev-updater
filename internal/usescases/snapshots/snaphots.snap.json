@@ -1,0 +1,66 @@
+
+[TestWorkItemToN8NResult/TestWorkItemToN8NResult_0 - 1]
+{
+    "version": "",
+    "source-branch": "",
+    "work-items": [
+        {
+            "id": 1,
+            "title": "",
+            "tags": [],
+            "integration-builds": ["25.4.13", "1.1.1.1"]
+        },
+        {
+            "id": 2,
+            "title": "Test 2",
+            "tags": ["25.4.13", "1.1.1.1"],
+            "integration-builds": ["25.4.13", "1.1.1.1"]
+        },
+        {
+            "id": 3,
+            "title": "Test 3",
+            "tags": ["25.4.13", "1.1.1.1"],
+            "integration-builds": ["25.4.13", "1.1.1.1"]
+        },
+        {
+            "id": 4,
+            "title": "Test 4",
+            "tags": ["25.4.13", "1.1.1.1"],
+            "integration-builds": []
+        }
+    ]
+}
+---
+
+[TestWorkItemToN8NResult/TestWorkItemToN8NResult_1 - 1]
+{
+    "version": "",
+    "source-branch": "",
+    "work-items": [
+        {
+            "id": 1,
+            "title": "Test 1",
+            "tags": ["25.4.13", "1.1.1.1"],
+            "integration-builds": ["25.4.13", "1.1.1.1"]
+        },
+        {
+            "id": 2,
+            "title": "",
+            "tags": ["25.4.13", "1.1.1.1"],
+            "integration-builds": ["25.4.13", "1.1.1.1"]
+        },
+        {
+            "id": 3,
+            "title": "Test 3",
+            "tags": ["25.4.13", "1.1.1.1"],
+            "integration-builds": []
+        },
+        {
+            "id": 4,
+            "title": "Test 4",
+            "tags": ["25.4.13", "1.1.1.1"],
+            "integration-builds": ["25.4.13", "1.1.1.1"]
+        }
+    ]
+}
+---

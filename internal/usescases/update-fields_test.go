@@ -848,11 +848,21 @@ func TestWorkItemToN8NResult(t *testing.T) {
 	}
 
 	for index, test := range tests {
-		name := fmt.Sprintf("TestSendToN8N_%d", index)
+		name := fmt.Sprintf("TestWorkItemToN8NResult_%d", index)
+		s := snaps.WithConfig(
+			snaps.Dir("snapshots"),
+			snaps.Filename("snaphots"),
+			snaps.Ext(".json"),
+			snaps.JSON(snaps.JSONConfig{
+				Width:    80,
+				Indent:   "    ",
+				SortKeys: false,
+			}),
+		)
 		t.Run(name, func(t *testing.T) {
 			result := WorkItemToN8NResult(test.workItems)
 			jsonResult, _ := json.Marshal(result)
-			snaps.MatchJSON(t, jsonResult)
+			s.MatchJSON(t, jsonResult)
 		})
 	}
 }
