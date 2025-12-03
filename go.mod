@@ -3,7 +3,7 @@ module github.com/Damien-Venant/prev-updater
 go 1.24.1
 
 require (
-	github.com/gkampitakis/go-snaps v0.5.16
+	github.com/gkampitakis/go-snaps v0.5.18
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
